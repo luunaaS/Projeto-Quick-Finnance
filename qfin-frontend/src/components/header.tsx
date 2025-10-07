@@ -51,7 +51,7 @@ export function Header() {
               <DollarSign className="h-5 w-5 text-white" />
             </div>
             <h1 className="text-xl font-bold" style={{ color: '#1E3A8A' }}>
-              Quick Finance
+              Quick Finnance
             </h1>
           </div>
         </div>
