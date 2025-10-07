@@ -21,7 +21,7 @@ interface TransactionFormProps {
 }
 
 export function TransactionForm({ onAddTransaction }: TransactionFormProps) {
-  const [type, setType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE');
+  const [type, setType] = useState<'INCOME' | 'EXPENSE'>('INCOME');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
