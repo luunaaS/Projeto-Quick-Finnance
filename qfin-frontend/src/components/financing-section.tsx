@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Badge } from "./ui/badge";
 
 interface Financing {
-  id: string;
+  id?: number;
   name: string;
   totalAmount: number;
   remainingAmount: number;

@@ -4,8 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 
 interface Transaction {
-  id: string;
-  type: 'income' | 'expense';
+  id: number;
+  type: 'INCOME' | 'EXPENSE';
   amount: number;
   category: string;
   description: string;
@@ -14,7 +14,7 @@ interface Transaction {
 
 interface TransactionListProps {
   transactions: Transaction[];
-  onDeleteTransaction: (id: string) => void;
+  onDeleteTransaction: (id: number) => void;
 }
 
 export function TransactionList({ transactions, onDeleteTransaction }: TransactionListProps) {
@@ -58,11 +58,11 @@ export function TransactionList({ transactions, onDeleteTransaction }: Transacti
                   <div 
                     className="flex h-10 w-10 items-center justify-center rounded-full"
                     style={{ 
-                      backgroundColor: transaction.type === 'income' ? '#059669' : '#DC2626',
+                      backgroundColor: transaction.type === 'INCOME' ? '#059669' : '#DC2626',
                       color: 'white'
                     }}
                   >
-                    {transaction.type === 'income' ? (
+                    {transaction.type === 'INCOME' ? (
                       <TrendingUp className="h-4 w-4" />
                     ) : (
                       <TrendingDown className="h-4 w-4" />
@@ -90,10 +90,10 @@ export function TransactionList({ transactions, onDeleteTransaction }: Transacti
                   <span 
                     className="font-bold"
                     style={{ 
-                      color: transaction.type === 'income' ? '#059669' : '#DC2626'
+                      color: transaction.type === 'INCOME' ? '#059669' : '#DC2626'
                     }}
                   >
-                    {transaction.type === 'income' ? '+' : '-'}
+                    {transaction.type === 'INCOME' ? '+' : '-'}
                     {formatCurrency(transaction.amount)}
                   </span>
                   <Button

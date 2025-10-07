@@ -2,17 +2,16 @@ import { API_CONFIG, getAuthHeaders } from '../config/api';
 
 // Tipos para transações
 export interface Transaction {
-  id: string;
-  type: 'income' | 'expense';
+  id: number;
+  type: 'INCOME' | 'EXPENSE';
   amount: number;
   category: string;
   description: string;
   date: string;
-  userId?: string;
 }
 
 export interface CreateTransactionRequest {
-  type: 'income' | 'expense';
+  type: 'INCOME' | 'EXPENSE';
   amount: number;
   category: string;
   description: string;
@@ -29,7 +28,7 @@ class TransactionsService {
   // Obter todas as transações do usuário
   async getTransactions(token: string): Promise<Transaction[]> {
     try {
-      const response = await fetch(`${this.baseURL}/transactions`, {
+      const response = await fetch(`${this.baseURL}${API_CONFIG.ENDPOINTS.TRANSACTIONS}`, {
         method: 'GET',
         headers: getAuthHeaders(token),
       });
@@ -51,7 +50,7 @@ class TransactionsService {
     transaction: CreateTransactionRequest
   ): Promise<Transaction | null> {
     try {
-      const response = await fetch(`${this.baseURL}/transactions`, {
+      const response = await fetch(`${this.baseURL}${API_CONFIG.ENDPOINTS.TRANSACTIONS}`, {
         method: 'POST',
         headers: getAuthHeaders(token),
         body: JSON.stringify(transaction),
@@ -71,11 +70,11 @@ class TransactionsService {
   // Atualizar transação
   async updateTransaction(
     token: string,
-    id: string,
+    id: number,
     transaction: Partial<CreateTransactionRequest>
   ): Promise<Transaction | null> {
     try {
-      const response = await fetch(`${this.baseURL}/transactions/${id}`, {
+      const response = await fetch(`${this.baseURL}${API_CONFIG.ENDPOINTS.TRANSACTIONS}/${id}`, {
         method: 'PUT',
         headers: getAuthHeaders(token),
         body: JSON.stringify(transaction),
@@ -93,9 +92,9 @@ class TransactionsService {
   }
 
   // Deletar transação
-  async deleteTransaction(token: string, id: string): Promise<boolean> {
+  async deleteTransaction(token: string, id: number): Promise<boolean> {
     try {
-      const response = await fetch(`${this.baseURL}/transactions/${id}`, {
+      const response = await fetch(`${this.baseURL}${API_CONFIG.ENDPOINTS.TRANSACTIONS}/${id}`, {
         method: 'DELETE',
         headers: getAuthHeaders(token),
       });

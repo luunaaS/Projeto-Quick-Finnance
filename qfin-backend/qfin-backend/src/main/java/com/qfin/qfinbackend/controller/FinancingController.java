@@ -1,44 +1,62 @@
 package com.qfin.qfinbackend.controller;
 
 import com.qfin.qfinbackend.model.Financing;
+import com.qfin.qfinbackend.model.User;
+import com.qfin.qfinbackend.repository.UserRepository;
 import com.qfin.qfinbackend.service.FinancingService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/financings")
-@CrossOrigin(origins = "http://localhost:3000") // Permitir requisições do frontend React
 public class FinancingController {
 
     @Autowired
     private FinancingService financingService;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
     @GetMapping
     public List<Financing> getAllFinancings() {
-        return financingService.getAllFinancings();
+        User user = getCurrentUser();
+        return financingService.getFinancingsByUser(user);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Financing> getFinancingById(@PathVariable Long id) {
-        return financingService.getFinancingById(id)
+        User user = getCurrentUser();
+        return financingService.getFinancingByIdAndUser(id, user)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
     public ResponseEntity<Financing> createFinancing(@Valid @RequestBody Financing financing) {
+        User user = getCurrentUser();
+        financing.setUser(user);
         Financing createdFinancing = financingService.createFinancing(financing);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdFinancing);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Financing> updateFinancing(@PathVariable Long id, @Valid @RequestBody Financing financingDetails) {
-        Financing updatedFinancing = financingService.updateFinancing(id, financingDetails);
+        User user = getCurrentUser();
+        Financing updatedFinancing = financingService.updateFinancing(id, financingDetails, user);
         if (updatedFinancing != null) {
             return ResponseEntity.ok(updatedFinancing);
         }
@@ -47,7 +65,8 @@ public class FinancingController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteFinancing(@PathVariable Long id) {
-        financingService.deleteFinancing(id);
+        User user = getCurrentUser();
+        financingService.deleteFinancing(id, user);
         return ResponseEntity.noContent().build();
     }
 }

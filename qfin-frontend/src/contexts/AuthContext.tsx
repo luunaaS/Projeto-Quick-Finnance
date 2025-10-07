@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { apiService } from '../services/api.service';
 
 interface User {
   id: string;
@@ -8,95 +9,94 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
+  token: string | null;
   login: (email: string, password: string) => Promise<boolean>;
   register: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
   isAuthenticated: boolean;
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Check for existing session on mount
   useEffect(() => {
     const storedUser = localStorage.getItem('qfin_user');
-    if (storedUser) {
+    const storedToken = localStorage.getItem('qfin_token');
+    
+    if (storedUser && storedToken) {
       setUser(JSON.parse(storedUser));
+      setToken(storedToken);
     }
+    setLoading(false);
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Simulate API call - In production, this would call your backend
-    const storedUsers = localStorage.getItem('qfin_users');
-    const users = storedUsers ? JSON.parse(storedUsers) : [];
-    
-    const foundUser = users.find(
-      (u: any) => u.email === email && u.password === password
-    );
-
-    if (foundUser) {
-      const userData = {
-        id: foundUser.id,
-        name: foundUser.name,
-        email: foundUser.email,
-      };
-      setUser(userData);
-      localStorage.setItem('qfin_user', JSON.stringify(userData));
-      return true;
+    try {
+      const response = await apiService.login({ email, password });
+      
+      if (response.success && response.data) {
+        const { user: userData, token: authToken } = response.data;
+        
+        setUser(userData);
+        setToken(authToken);
+        localStorage.setItem('qfin_user', JSON.stringify(userData));
+        localStorage.setItem('qfin_token', authToken);
+        
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
     }
-    
-    return false;
   };
 
   const register = async (name: string, email: string, password: string): Promise<boolean> => {
-    // Simulate API call - In production, this would call your backend
-    const storedUsers = localStorage.getItem('qfin_users');
-    const users = storedUsers ? JSON.parse(storedUsers) : [];
-    
-    // Check if user already exists
-    const existingUser = users.find((u: any) => u.email === email);
-    if (existingUser) {
+    try {
+      const response = await apiService.register({ name, email, password });
+      
+      if (response.success && response.data) {
+        const { user: userData, token: authToken } = response.data;
+        
+        setUser(userData);
+        setToken(authToken);
+        localStorage.setItem('qfin_user', JSON.stringify(userData));
+        localStorage.setItem('qfin_token', authToken);
+        
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Register error:', error);
       return false;
     }
-
-    // Create new user
-    const newUser = {
-      id: Date.now().toString(),
-      name,
-      email,
-      password, // In production, this should be hashed on the backend
-    };
-
-    users.push(newUser);
-    localStorage.setItem('qfin_users', JSON.stringify(users));
-
-    // Auto-login after registration
-    const userData = {
-      id: newUser.id,
-      name: newUser.name,
-      email: newUser.email,
-    };
-    setUser(userData);
-    localStorage.setItem('qfin_user', JSON.stringify(userData));
-    
-    return true;
   };
 
   const logout = () => {
     setUser(null);
+    setToken(null);
     localStorage.removeItem('qfin_user');
+    localStorage.removeItem('qfin_token');
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
+        token,
         login,
         register,
         logout,
-        isAuthenticated: !!user,
+        isAuthenticated: !!user && !!token,
+        loading,
       }}
     >
       {children}

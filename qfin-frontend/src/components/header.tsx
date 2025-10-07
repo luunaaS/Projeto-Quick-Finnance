@@ -1,5 +1,5 @@
-import { DollarSign, Menu, User, LogOut } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { DollarSign, Menu, User, LogOut, Settings } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback } from "./ui/avatar";
@@ -15,6 +15,7 @@ import {
 export function Header() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -30,6 +31,8 @@ export function Header() {
       .slice(0, 2);
   };
 
+  const isActive = (path: string) => location.pathname === path;
+
   return (
     <header className="border-b bg-white shadow-sm" style={{ borderColor: '#6B7280' }}>
       <div className="flex h-16 items-center justify-between px-6">
@@ -37,7 +40,10 @@ export function Header() {
           <Button variant="ghost" size="icon" className="md:hidden">
             <Menu className="h-5 w-5" />
           </Button>
-          <div className="flex items-center gap-2">
+          <div 
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => navigate('/')}
+          >
             <div 
               className="flex h-8 w-8 items-center justify-center rounded-lg"
               style={{ backgroundColor: '#1E3A8A' }}
@@ -45,39 +51,44 @@ export function Header() {
               <DollarSign className="h-5 w-5 text-white" />
             </div>
             <h1 className="text-xl font-bold" style={{ color: '#1E3A8A' }}>
-              QFin
+              Quick Finance
             </h1>
           </div>
         </div>
         
-        <nav className="hidden md:flex items-center gap-6">
+        <nav className="hidden md:flex items-center gap-2">
           <Button 
             variant="ghost" 
             className="hover:bg-blue-50"
-            style={{ color: '#1E3A8A' }}
+            style={{ 
+              color: isActive('/') ? '#1E3A8A' : '#6B7280',
+              fontWeight: isActive('/') ? '600' : '400'
+            }}
+            onClick={() => navigate('/')}
           >
             Dashboard
           </Button>
           <Button 
             variant="ghost"
             className="hover:bg-blue-50"
-            style={{ color: '#6B7280' }}
+            style={{ 
+              color: isActive('/transactions') ? '#1E3A8A' : '#6B7280',
+              fontWeight: isActive('/transactions') ? '600' : '400'
+            }}
+            onClick={() => navigate('/transactions')}
           >
             Transações
           </Button>
           <Button 
             variant="ghost"
             className="hover:bg-blue-50"
-            style={{ color: '#6B7280' }}
+            style={{ 
+              color: isActive('/financings') ? '#1E3A8A' : '#6B7280',
+              fontWeight: isActive('/financings') ? '600' : '400'
+            }}
+            onClick={() => navigate('/financings')}
           >
             Financiamentos
-          </Button>
-          <Button 
-            variant="ghost"
-            className="hover:bg-blue-50"
-            style={{ color: '#6B7280' }}
-          >
-            Relatórios
           </Button>
         </nav>
 
@@ -100,6 +111,11 @@ export function Header() {
                   <p className="text-xs text-gray-500">{user?.email}</p>
                 </div>
               </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer">
+                <Settings className="mr-2 h-4 w-4" />
+                Perfil
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} className="text-red-600 cursor-pointer">
                 <LogOut className="mr-2 h-4 w-4" />
