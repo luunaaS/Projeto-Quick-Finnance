@@ -8,8 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Textarea } from "./ui/textarea";
 
 interface Transaction {
-  id: string;
-  type: 'income' | 'expense';
+  id: number;
+  type: 'INCOME' | 'EXPENSE';
   amount: number;
   category: string;
   description: string;
@@ -21,7 +21,7 @@ interface TransactionFormProps {
 }
 
 export function TransactionForm({ onAddTransaction }: TransactionFormProps) {
-  const [type, setType] = useState<'income' | 'expense'>('expense');
+  const [type, setType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
@@ -76,20 +76,20 @@ export function TransactionForm({ onAddTransaction }: TransactionFormProps) {
           <div className="flex gap-2">
             <Button
               type="button"
-              variant={type === 'income' ? 'default' : 'outline'}
-              onClick={() => setType('income')}
+              variant={type === 'INCOME' ? 'default' : 'outline'}
+              onClick={() => setType('INCOME')}
               className="flex-1"
-              style={type === 'income' ? { backgroundColor: '#059669', borderColor: '#059669' } : { borderColor: '#059669', color: '#059669' }}
+              style={type === 'INCOME' ? { backgroundColor: '#059669', borderColor: '#059669' } : { borderColor: '#059669', color: '#059669' }}
             >
               <Plus className="h-4 w-4 mr-2" />
               Receita
             </Button>
             <Button
               type="button"
-              variant={type === 'expense' ? 'default' : 'outline'}
-              onClick={() => setType('expense')}
+              variant={type === 'EXPENSE' ? 'default' : 'outline'}
+              onClick={() => setType('EXPENSE')}
               className="flex-1"
-              style={type === 'expense' ? { backgroundColor: '#DC2626', borderColor: '#DC2626' } : { borderColor: '#DC2626', color: '#DC2626' }}
+              style={type === 'EXPENSE' ? { backgroundColor: '#DC2626', borderColor: '#DC2626' } : { borderColor: '#DC2626', color: '#DC2626' }}
             >
               <Minus className="h-4 w-4 mr-2" />
               Despesa
@@ -116,7 +116,7 @@ export function TransactionForm({ onAddTransaction }: TransactionFormProps) {
                 <SelectValue placeholder="Selecione uma categoria" />
               </SelectTrigger>
               <SelectContent>
-                {(type === 'income' ? incomeCategories : expenseCategories).map((cat) => (
+                {(type === 'INCOME' ? incomeCategories : expenseCategories).map((cat) => (
                   <SelectItem key={cat} value={cat}>
                     {cat}
                   </SelectItem>

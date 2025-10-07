@@ -37,6 +37,10 @@ public class Financing {
     @NotNull(message = "End date cannot be null")
     private LocalDate endDate;
     
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+    
     public enum FinancingType {
         LOAN,
         MORTGAGE,
