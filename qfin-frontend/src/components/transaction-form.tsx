@@ -6,15 +6,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Textarea } from "./ui/textarea";
-
-interface Transaction {
-  id: number;
-  type: 'INCOME' | 'EXPENSE';
-  amount: number;
-  category: string;
-  description: string;
-  date: string;
-}
+import type { Transaction } from '../types';
 
 interface TransactionFormProps {
   onAddTransaction: (transaction: Omit<Transaction, 'id'>) => void;

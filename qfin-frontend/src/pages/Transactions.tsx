@@ -3,27 +3,28 @@ import { Header } from '../components/header';
 import { TransactionForm } from '../components/transaction-form';
 import { TransactionList } from '../components/transaction-list';
 import { useAuth } from '../contexts/AuthContext';
-import { transactionsService, Transaction } from '../services/transactions.service';
+import { transactionsService } from '../services/transactions.service';
+import type { Transaction } from '../types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
 
 export function Transactions() {
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'INCOME' | 'EXPENSE'>('all');
 
   useEffect(() => {
-    loadTransactions();
-  }, []);
+    if (isAuthenticated) {
+      loadTransactions();
+    }
+  }, [isAuthenticated]);
 
   const loadTransactions = async () => {
-    if (!token) return;
-    
     try {
       setLoading(true);
-      const data = await transactionsService.getTransactions(token);
+      const data = await transactionsService.getTransactions();
       setTransactions(data);
     } catch (error) {
       console.error('Error loading transactions:', error);
@@ -33,10 +34,8 @@ export function Transactions() {
   };
 
   const handleAddTransaction = async (newTransaction: Omit<Transaction, 'id'>) => {
-    if (!token) return;
-    
     try {
-      const created = await transactionsService.createTransaction(token, newTransaction);
+      const created = await transactionsService.createTransaction(newTransaction);
       if (created) {
         setTransactions(prev => [created, ...prev]);
       }
@@ -46,10 +45,8 @@ export function Transactions() {
   };
 
   const handleDeleteTransaction = async (id: number) => {
-    if (!token) return;
-    
     try {
-      const success = await transactionsService.deleteTransaction(token, id);
+      const success = await transactionsService.deleteTransaction(id);
       if (success) {
         setTransactions(prev => prev.filter(t => t.id !== id));
       }

@@ -1,33 +1,10 @@
 import { API_CONFIG, getAuthHeaders } from '../config/api';
-
-// Tipos para as respostas da API
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  error?: string;
-}
-
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface RegisterRequest {
-  name: string;
-  email: string;
-  password: string;
-}
-
-export interface AuthResponse {
-  user: {
-    id: string;
-    name: string;
-    email: string;
-  };
-  token: string;
-  refreshToken?: string;
-}
+import type { 
+  ApiResponse, 
+  LoginRequest, 
+  RegisterRequest, 
+  AuthResponse 
+} from '../types';
 
 class ApiService {
   private baseURL: string;

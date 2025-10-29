@@ -4,6 +4,7 @@ import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
 import { Transactions } from './pages/Transactions';
 import { Financings } from './pages/Financings';
+import { Goals } from './pages/Goals';
 import { Profile } from './pages/Profile';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
@@ -33,6 +34,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <Financings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/goals"
+        element={
+          <ProtectedRoute>
+            <Goals />
           </ProtectedRoute>
         }
       />

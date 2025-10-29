@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CreditCard, Plus, Calendar, DollarSign } from "lucide-react";
+import { CreditCard, Plus, Calendar } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
@@ -7,16 +7,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Badge } from "./ui/badge";
-
-interface Financing {
-  id?: number;
-  name: string;
-  totalAmount: number;
-  remainingAmount: number;
-  monthlyPayment: number;
-  type: string;
-  endDate: string;
-}
+import type { Financing } from '../types';
 
 interface FinancingSectionProps {
   financings: Financing[];

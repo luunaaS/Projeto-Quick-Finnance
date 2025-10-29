@@ -90,6 +90,17 @@ export function Header() {
           >
             Financiamentos
           </Button>
+          <Button 
+            variant="ghost"
+            className="hover:bg-blue-50"
+            style={{ 
+              color: isActive('/goals') ? '#1E3A8A' : '#6B7280',
+              fontWeight: isActive('/goals') ? '600' : '400'
+            }}
+            onClick={() => navigate('/goals')}
+          >
+            Metas
+          </Button>
         </nav>
 
         <div className="flex items-center gap-4">

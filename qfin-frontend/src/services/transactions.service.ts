@@ -1,22 +1,5 @@
 import { API_CONFIG, getAuthHeaders } from '../config/api';
-
-// Tipos para transações
-export interface Transaction {
-  id: number;
-  type: 'INCOME' | 'EXPENSE';
-  amount: number;
-  category: string;
-  description: string;
-  date: string;
-}
-
-export interface CreateTransactionRequest {
-  type: 'INCOME' | 'EXPENSE';
-  amount: number;
-  category: string;
-  description: string;
-  date: string;
-}
+import type { Transaction, CreateTransactionRequest, Statistics } from '../types';
 
 class TransactionsService {
   private baseURL: string;
@@ -26,11 +9,11 @@ class TransactionsService {
   }
 
   // Obter todas as transações do usuário
-  async getTransactions(token: string): Promise<Transaction[]> {
+  async getTransactions(): Promise<Transaction[]> {
     try {
       const response = await fetch(`${this.baseURL}${API_CONFIG.ENDPOINTS.TRANSACTIONS}`, {
         method: 'GET',
-        headers: getAuthHeaders(token),
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -46,13 +29,12 @@ class TransactionsService {
 
   // Criar nova transação
   async createTransaction(
-    token: string,
     transaction: CreateTransactionRequest
   ): Promise<Transaction | null> {
     try {
       const response = await fetch(`${this.baseURL}${API_CONFIG.ENDPOINTS.TRANSACTIONS}`, {
         method: 'POST',
-        headers: getAuthHeaders(token),
+        headers: getAuthHeaders(),
         body: JSON.stringify(transaction),
       });
 
@@ -69,14 +51,13 @@ class TransactionsService {
 
   // Atualizar transação
   async updateTransaction(
-    token: string,
     id: number,
     transaction: Partial<CreateTransactionRequest>
   ): Promise<Transaction | null> {
     try {
       const response = await fetch(`${this.baseURL}${API_CONFIG.ENDPOINTS.TRANSACTIONS}/${id}`, {
         method: 'PUT',
-        headers: getAuthHeaders(token),
+        headers: getAuthHeaders(),
         body: JSON.stringify(transaction),
       });
 
@@ -92,11 +73,11 @@ class TransactionsService {
   }
 
   // Deletar transação
-  async deleteTransaction(token: string, id: number): Promise<boolean> {
+  async deleteTransaction(id: number): Promise<boolean> {
     try {
       const response = await fetch(`${this.baseURL}${API_CONFIG.ENDPOINTS.TRANSACTIONS}/${id}`, {
         method: 'DELETE',
-        headers: getAuthHeaders(token),
+        headers: getAuthHeaders(),
       });
 
       return response.ok;
@@ -107,15 +88,11 @@ class TransactionsService {
   }
 
   // Obter estatísticas
-  async getStatistics(token: string): Promise<{
-    totalIncome: number;
-    totalExpenses: number;
-    balance: number;
-  } | null> {
+  async getStatistics(): Promise<Statistics | null> {
     try {
       const response = await fetch(`${this.baseURL}/transactions/statistics`, {
         method: 'GET',
-        headers: getAuthHeaders(token),
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {

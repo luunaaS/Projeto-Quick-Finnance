@@ -1,121 +1,97 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '../components/header';
 import { DashboardCards } from '../components/dashboard-cards';
 import { TransactionForm } from '../components/transaction-form';
 import { TransactionList } from '../components/transaction-list';
 import { FinancialChart } from '../components/financial-chart';
 import { FinancingSection } from '../components/financing-section';
-
-interface Transaction {
-  id: string;
-  type: 'income' | 'expense';
-  amount: number;
-  category: string;
-  description: string;
-  date: string;
-}
-
-interface Financing {
-  id: string;
-  name: string;
-  totalAmount: number;
-  remainingAmount: number;
-  monthlyPayment: number;
-  type: string;
-  endDate: string;
-}
-
-// Dados de exemplo
-const sampleTransactions: Transaction[] = [
-  {
-    id: '1',
-    type: 'income',
-    amount: 5000,
-    category: 'Salário',
-    description: 'Salário mensal',
-    date: '2024-01-15'
-  },
-  {
-    id: '2',
-    type: 'expense',
-    amount: 150,
-    category: 'Alimentação',
-    description: 'Compras no supermercado',
-    date: '2024-01-14'
-  },
-  {
-    id: '3',
-    type: 'expense',
-    amount: 80,
-    category: 'Transporte',
-    description: 'Combustível',
-    date: '2024-01-13'
-  },
-  {
-    id: '4',
-    type: 'income',
-    amount: 500,
-    category: 'Freelance',
-    description: 'Projeto web',
-    date: '2024-01-12'
-  }
-];
-
-const sampleFinancings: Financing[] = [
-  {
-    id: '1',
-    name: 'Financiamento do Carro',
-    totalAmount: 50000,
-    remainingAmount: 35000,
-    monthlyPayment: 890,
-    type: 'Veículo',
-    endDate: '2026-12-31'
-  },
-  {
-    id: '2',
-    name: 'Casa Própria',
-    totalAmount: 300000,
-    remainingAmount: 250000,
-    monthlyPayment: 1200,
-    type: 'Imóvel',
-    endDate: '2034-06-30'
-  }
-];
+import { useAuth } from '../contexts/AuthContext';
+import { transactionsService } from '../services/transactions.service';
+import { financingService } from '../services/financing.service';
+import type { Transaction, Financing } from '../types';
 
 export function Dashboard() {
-  const [transactions, setTransactions] = useState<Transaction[]>(sampleTransactions);
-  const [financings, setFinancings] = useState<Financing[]>(sampleFinancings);
+  const { isAuthenticated } = useAuth();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [financings, setFinancings] = useState<Financing[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const addTransaction = (newTransaction: Omit<Transaction, 'id'>) => {
-    const transaction: Transaction = {
-      ...newTransaction,
-      id: Date.now().toString()
-    };
-    setTransactions(prev => [transaction, ...prev]);
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadData();
+    }
+  }, [isAuthenticated]);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [transactionsData, financingsData] = await Promise.all([
+        transactionsService.getTransactions(),
+        financingService.getAllFinancings()
+      ]);
+      setTransactions(transactionsData);
+      setFinancings(financingsData);
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const deleteTransaction = (id: string) => {
-    setTransactions(prev => prev.filter(t => t.id !== id));
+  const addTransaction = async (newTransaction: Omit<Transaction, 'id'>) => {
+    try {
+      const created = await transactionsService.createTransaction(newTransaction);
+      if (created) {
+        setTransactions(prev => [created, ...prev]);
+      }
+    } catch (error) {
+      console.error('Error adding transaction:', error);
+    }
   };
 
-  const addFinancing = (newFinancing: Omit<Financing, 'id'>) => {
-    const financing: Financing = {
-      ...newFinancing,
-      id: Date.now().toString()
-    };
-    setFinancings(prev => [financing, ...prev]);
+  const deleteTransaction = async (id: number) => {
+    try {
+      const success = await transactionsService.deleteTransaction(id);
+      if (success) {
+        setTransactions(prev => prev.filter(t => t.id !== id));
+      }
+    } catch (error) {
+      console.error('Error deleting transaction:', error);
+    }
+  };
+
+  const addFinancing = async (newFinancing: Omit<Financing, 'id'>) => {
+    try {
+      const created = await financingService.createFinancing(newFinancing);
+      if (created) {
+        setFinancings(prev => [created, ...prev]);
+      }
+    } catch (error) {
+      console.error('Error adding financing:', error);
+    }
   };
 
   // Calcular resumo financeiro
   const totalIncome = transactions
-    .filter(t => t.type === 'income')
+    .filter(t => t.type === 'INCOME')
     .reduce((sum, t) => sum + t.amount, 0);
 
   const totalExpenses = transactions
-    .filter(t => t.type === 'expense')
+    .filter(t => t.type === 'EXPENSE')
     .reduce((sum, t) => sum + t.amount, 0);
 
   const totalBalance = totalIncome - totalExpenses;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <main className="container mx-auto px-6 py-8">
+          <p className="text-center text-gray-500">Carregando dados...</p>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

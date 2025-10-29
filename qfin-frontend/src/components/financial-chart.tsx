@@ -1,14 +1,6 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-
-interface Transaction {
-  id: string;
-  type: 'income' | 'expense';
-  amount: number;
-  category: string;
-  description: string;
-  date: string;
-}
+import type { Transaction } from '../types';
 
 interface FinancialChartProps {
   transactions: Transaction[];
@@ -17,7 +9,7 @@ interface FinancialChartProps {
 export function FinancialChart({ transactions }: FinancialChartProps) {
   // Preparar dados para o gráfico de pizza (despesas por categoria)
   const expensesByCategory = transactions
-    .filter(t => t.type === 'expense')
+    .filter(t => t.type === 'EXPENSE')
     .reduce((acc, transaction) => {
       acc[transaction.category] = (acc[transaction.category] || 0) + transaction.amount;
       return acc;
@@ -35,7 +27,7 @@ export function FinancialChart({ transactions }: FinancialChartProps) {
       acc[month] = { month, income: 0, expense: 0 };
     }
     
-    if (transaction.type === 'income') {
+    if (transaction.type === 'INCOME') {
       acc[month].income += transaction.amount;
     } else {
       acc[month].expense += transaction.amount;
@@ -70,7 +62,7 @@ export function FinancialChart({ transactions }: FinancialChartProps) {
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {pieData.map((entry, index) => (
+                  {pieData.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>

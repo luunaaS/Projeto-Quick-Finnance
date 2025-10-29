@@ -1,14 +1,5 @@
 import { API_CONFIG, getAuthHeaders } from '../config/api';
-
-export interface Financing {
-  id?: number;
-  name: string;
-  totalAmount: number;
-  remainingAmount: number;
-  monthlyPayment: number;
-  type: string;
-  endDate: string;
-}
+import type { Financing } from '../types';
 
 class FinancingService {
   private baseURL: string;
@@ -17,112 +8,91 @@ class FinancingService {
     this.baseURL = API_CONFIG.BASE_URL;
   }
 
-  private getToken(): string | null {
-    return localStorage.getItem('qfin_token');
-  }
-
   async getAllFinancings(): Promise<Financing[]> {
     try {
-      const token = this.getToken();
-      if (!token) throw new Error('No token found');
-
       const response = await fetch(`${this.baseURL}${API_CONFIG.ENDPOINTS.FINANCINGS}`, {
         method: 'GET',
-        headers: getAuthHeaders(token),
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch financings');
+        throw new Error('Erro ao buscar financiamentos');
       }
 
       return await response.json();
     } catch (error) {
       console.error('Error fetching financings:', error);
-      throw error;
+      return [];
     }
   }
 
-  async getFinancingById(id: number): Promise<Financing> {
+  async getFinancingById(id: number): Promise<Financing | null> {
     try {
-      const token = this.getToken();
-      if (!token) throw new Error('No token found');
-
       const response = await fetch(`${this.baseURL}${API_CONFIG.ENDPOINTS.FINANCINGS}/${id}`, {
         method: 'GET',
-        headers: getAuthHeaders(token),
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch financing');
+        throw new Error('Erro ao buscar financiamento');
       }
 
       return await response.json();
     } catch (error) {
       console.error('Error fetching financing:', error);
-      throw error;
+      return null;
     }
   }
 
-  async createFinancing(financing: Financing): Promise<Financing> {
+  async createFinancing(financing: Omit<Financing, 'id'>): Promise<Financing | null> {
     try {
-      const token = this.getToken();
-      if (!token) throw new Error('No token found');
-
       const response = await fetch(`${this.baseURL}${API_CONFIG.ENDPOINTS.FINANCINGS}`, {
         method: 'POST',
-        headers: getAuthHeaders(token),
+        headers: getAuthHeaders(),
         body: JSON.stringify(financing),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create financing');
+        throw new Error('Erro ao criar financiamento');
       }
 
       return await response.json();
     } catch (error) {
       console.error('Error creating financing:', error);
-      throw error;
+      return null;
     }
   }
 
-  async updateFinancing(id: number, financing: Financing): Promise<Financing> {
+  async updateFinancing(id: number, financing: Partial<Financing>): Promise<Financing | null> {
     try {
-      const token = this.getToken();
-      if (!token) throw new Error('No token found');
-
       const response = await fetch(`${this.baseURL}${API_CONFIG.ENDPOINTS.FINANCINGS}/${id}`, {
         method: 'PUT',
-        headers: getAuthHeaders(token),
+        headers: getAuthHeaders(),
         body: JSON.stringify(financing),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update financing');
+        throw new Error('Erro ao atualizar financiamento');
       }
 
       return await response.json();
     } catch (error) {
       console.error('Error updating financing:', error);
-      throw error;
+      return null;
     }
   }
 
-  async deleteFinancing(id: number): Promise<void> {
+  async deleteFinancing(id: number): Promise<boolean> {
     try {
-      const token = this.getToken();
-      if (!token) throw new Error('No token found');
-
       const response = await fetch(`${this.baseURL}${API_CONFIG.ENDPOINTS.FINANCINGS}/${id}`, {
         method: 'DELETE',
-        headers: getAuthHeaders(token),
+        headers: getAuthHeaders(),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to delete financing');
-      }
+      return response.ok;
     } catch (error) {
       console.error('Error deleting financing:', error);
-      throw error;
+      return false;
     }
   }
 }

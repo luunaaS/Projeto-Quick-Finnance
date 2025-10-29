@@ -2,22 +2,23 @@ import { useState, useEffect } from 'react';
 import { Header } from '../components/header';
 import { FinancingSection } from '../components/financing-section';
 import { useAuth } from '../contexts/AuthContext';
-import { financingService, Financing } from '../services/financing.service';
+import { financingService } from '../services/financing.service';
+import type { Financing } from '../types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { DollarSign, TrendingDown, Calendar } from 'lucide-react';
 
 export function Financings() {
-  const { token } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [financings, setFinancings] = useState<Financing[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadFinancings();
-  }, []);
+    if (isAuthenticated) {
+      loadFinancings();
+    }
+  }, [isAuthenticated]);
 
   const loadFinancings = async () => {
-    if (!token) return;
-    
     try {
       setLoading(true);
       const data = await financingService.getAllFinancings();
@@ -30,8 +31,6 @@ export function Financings() {
   };
 
   const handleAddFinancing = async (newFinancing: Omit<Financing, 'id'>) => {
-    if (!token) return;
-    
     try {
       const created = await financingService.createFinancing(newFinancing);
       if (created) {

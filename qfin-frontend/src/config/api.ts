@@ -12,6 +12,7 @@ export const API_CONFIG = {
     ME: '/auth/me',
     TRANSACTIONS: '/transactions',
     FINANCINGS: '/financings',
+    GOALS: '/goals',
   },
   
   // Timeout para requisições (em ms)
@@ -24,8 +25,11 @@ export const getAuthHeaders = (token?: string) => {
     'Content-Type': 'application/json',
   };
   
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+  // Se não foi passado um token, tenta pegar do localStorage
+  const authToken = token || localStorage.getItem('qfin_token');
+  
+  if (authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`;
   }
   
   return headers;
