@@ -5,6 +5,8 @@ import { Dashboard } from './pages/Dashboard';
 import { Transactions } from './pages/Transactions';
 import { Financings } from './pages/Financings';
 import { Profile } from './pages/Profile';
+import Goals from './pages/Goals';
+import Reports from './pages/Reports';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 export default function App() {
@@ -41,6 +43,22 @@ export default function App() {
         element={
           <ProtectedRoute>
             <Profile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/goals"
+        element={
+          <ProtectedRoute>
+            <Goals />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reports"
+        element={
+          <ProtectedRoute>
+            <Reports />
           </ProtectedRoute>
         }
       />

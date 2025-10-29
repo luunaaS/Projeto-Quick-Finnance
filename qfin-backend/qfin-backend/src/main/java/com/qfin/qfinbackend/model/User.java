@@ -24,4 +24,8 @@ public class User {
 
     @NotBlank(message = "Password cannot be empty")
     private String password;
+
+    public String getUsername() {
+        return email;
+    }
 }
