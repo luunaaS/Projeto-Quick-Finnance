@@ -66,6 +66,11 @@ export interface RegisterRequest {
   password: string;
 }
 
+export interface UpdateProfileRequest {
+  name: string;
+  email: string;
+}
+
 export interface Statistics {
   totalIncome: number;
   totalExpenses: number;

@@ -61,6 +61,18 @@ export function FinancingSection({ financings, onAddFinancing }: FinancingSectio
     return ((total - remaining) / total) * 100;
   };
 
+  const getTypeLabel = (type: string) => {
+    const typeLabels: Record<string, string> = {
+      'CAR_FINANCING': 'Veículo',
+      'MORTGAGE': 'Imóvel',
+      'PERSONAL_LOAN': 'Pessoal',
+      'STUDENT_LOAN': 'Estudantil',
+      'LOAN': 'Empréstimo',
+      'OTHER': 'Outros'
+    };
+    return typeLabels[type] || type;
+  };
+
   return (
     <Card className="border shadow-sm">
       <CardHeader>
@@ -158,11 +170,12 @@ export function FinancingSection({ financings, onAddFinancing }: FinancingSectio
                       <SelectValue placeholder="Selecione o tipo" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Veículo">Veículo</SelectItem>
-                      <SelectItem value="Imóvel">Imóvel</SelectItem>
-                      <SelectItem value="Pessoal">Pessoal</SelectItem>
-                      <SelectItem value="Cartão de Crédito">Cartão de Crédito</SelectItem>
-                      <SelectItem value="Outros">Outros</SelectItem>
+                      <SelectItem value="CAR_FINANCING">Veículo</SelectItem>
+                      <SelectItem value="MORTGAGE">Imóvel</SelectItem>
+                      <SelectItem value="PERSONAL_LOAN">Pessoal</SelectItem>
+                      <SelectItem value="STUDENT_LOAN">Estudantil</SelectItem>
+                      <SelectItem value="LOAN">Empréstimo</SelectItem>
+                      <SelectItem value="OTHER">Outros</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -203,7 +216,7 @@ export function FinancingSection({ financings, onAddFinancing }: FinancingSectio
                         color: '#6B7280'
                       }}
                     >
-                      {financing.type}
+                      {getTypeLabel(financing.type)}
                     </Badge>
                   </div>
                   <div className="text-right">

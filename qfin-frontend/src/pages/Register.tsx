@@ -55,12 +55,12 @@ export function Register() {
       return;
     }
 
-    const success = await register(name, email, password);
+    const result = await register(name, email, password);
     
-    if (success) {
+    if (result.success) {
       navigate('/');
     } else {
-      setError('Este email já está cadastrado');
+      setError(result.error || 'Erro ao criar conta');
     }
     
     setIsLoading(false);

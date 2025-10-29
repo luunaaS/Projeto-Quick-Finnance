@@ -4,6 +4,10 @@ echo Iniciando Backend Quick Finance
 echo ========================================
 echo.
 
+REM Configurar Java 17
+set "JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-17.0.16.8-hotspot"
+set "PATH=%JAVA_HOME%\bin;%PATH%"
+
 cd qfin-backend\qfin-backend
 
 echo Verificando Java...

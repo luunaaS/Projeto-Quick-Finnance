@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '../components/header';
 import { useAuth } from '../contexts/AuthContext';
+import { transactionsService } from '../services/transactions.service';
+import { financingService } from '../services/financing.service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -10,21 +12,58 @@ import { User, Mail, Lock, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export function Profile() {
-  const { user, logout } = useAuth();
+  const { user, logout, token, updateProfile } = useAuth();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
+  const [transactionCount, setTransactionCount] = useState(0);
+  const [financingCount, setFinancingCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadStatistics();
+  }, []);
+
+  const loadStatistics = async () => {
+    if (!token) return;
+    
+    try {
+      setLoading(true);
+      const transactions = await transactionsService.getTransactions();
+      const financings = await financingService.getAllFinancings();
+      
+      setTransactionCount(transactions.length);
+      setFinancingCount(financings.length);
+    } catch (error) {
+      console.error('Error loading statistics:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implementar atualização de perfil no backend
-    setIsEditing(false);
+    
+    try {
+      const result = await updateProfile(name, email);
+      
+      if (result.success) {
+        setIsEditing(false);
+        // Recarregar estatísticas se necessário
+        loadStatistics();
+      } else {
+        alert(result.error || 'Erro ao atualizar perfil');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Erro ao atualizar perfil');
+    }
   };
 
   const getInitials = (name: string) => {
@@ -217,12 +256,16 @@ export function Profile() {
 
               <div className="p-4 bg-green-50 rounded-lg">
                 <p className="text-sm text-green-900 font-medium">Transações Registradas</p>
-                <p className="text-2xl font-bold text-green-600">-</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {loading ? '...' : transactionCount}
+                </p>
               </div>
 
               <div className="p-4 bg-orange-50 rounded-lg">
                 <p className="text-sm text-orange-900 font-medium">Financiamentos Ativos</p>
-                <p className="text-2xl font-bold text-orange-600">-</p>
+                <p className="text-2xl font-bold text-orange-600">
+                  {loading ? '...' : financingCount}
+                </p>
               </div>
             </div>
           </CardContent>

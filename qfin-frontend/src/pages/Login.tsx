@@ -27,12 +27,12 @@ export function Login() {
       return;
     }
 
-    const success = await login(email, password);
+    const result = await login(email, password);
     
-    if (success) {
+    if (result.success) {
       navigate('/');
     } else {
-      setError('Email ou senha incorretos');
+      setError(result.error || 'Email ou senha incorretos');
     }
     
     setIsLoading(false);

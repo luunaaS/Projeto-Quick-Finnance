@@ -2,7 +2,8 @@ import { API_CONFIG, getAuthHeaders } from '../config/api';
 import type { 
   ApiResponse, 
   LoginRequest, 
-  RegisterRequest, 
+  RegisterRequest,
+  UpdateProfileRequest,
   AuthResponse 
 } from '../types';
 
@@ -32,9 +33,11 @@ class ApiService {
       const data = await response.json();
 
       if (!response.ok) {
+        // O backend pode retornar 'error' ou 'message'
+        const errorMessage = data.error || data.message || 'Erro na requisição';
         return {
           success: false,
-          error: data.message || 'Erro na requisição',
+          error: errorMessage,
         };
       }
 
@@ -88,6 +91,14 @@ class ApiService {
     return this.request<AuthResponse>(API_CONFIG.ENDPOINTS.REFRESH_TOKEN, {
       method: 'POST',
       body: JSON.stringify({ refreshToken }),
+    });
+  }
+
+  // Update profile
+  async updateProfile(userData: UpdateProfileRequest): Promise<ApiResponse<AuthResponse>> {
+    return this.request<AuthResponse>(`${API_CONFIG.ENDPOINTS.LOGIN.replace('/login', '/profile')}`, {
+      method: 'PUT',
+      body: JSON.stringify(userData),
     });
   }
 }

@@ -61,6 +61,30 @@ public class AuthController {
         }
     }
 
+    @PutMapping("/profile")
+    public ResponseEntity<?> updateProfile(@RequestBody UpdateProfileRequest request, @RequestHeader("Authorization") String authHeader) {
+        try {
+            String token = authHeader.substring(7); // Remove "Bearer "
+            String email = jwtUtil.extractUsername(token);
+            
+            User updatedUser = userService.updateProfile(email, request.getName(), request.getEmail());
+            
+            // Se o email mudou, gerar novo token
+            String newToken = token;
+            if (!email.equals(request.getEmail())) {
+                newToken = jwtUtil.generateToken(updatedUser.getEmail());
+            }
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("token", newToken);
+            response.put("user", Map.of("id", updatedUser.getId(), "name", updatedUser.getName(), "email", updatedUser.getEmail()));
+            
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     public static class RegisterRequest {
         private String name;
         private String email;
@@ -84,5 +108,16 @@ public class AuthController {
         public void setEmail(String email) { this.email = email; }
         public String getPassword() { return password; }
         public void setPassword(String password) { this.password = password; }
+    }
+
+    public static class UpdateProfileRequest {
+        private String name;
+        private String email;
+
+        // getters and setters
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
     }
 }
