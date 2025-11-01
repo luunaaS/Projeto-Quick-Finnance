@@ -96,3 +96,23 @@ export interface CreateGoalRequest {
   category: string;
   description?: string;
 }
+
+export interface Category {
+  id: number;
+  name: string;
+  type: 'INCOME' | 'EXPENSE';
+  parentId?: number | null;
+  isDefault: boolean;
+  userId: number;
+}
+
+export interface CreateCategoryRequest {
+  name: string;
+  type: 'INCOME' | 'EXPENSE';
+  parentId?: number | null;
+}
+
+export interface UpdateCategoryRequest {
+  name: string;
+  parentId?: number | null;
+}

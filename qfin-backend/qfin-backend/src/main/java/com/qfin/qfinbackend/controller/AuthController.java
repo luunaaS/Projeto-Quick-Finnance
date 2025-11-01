@@ -1,6 +1,7 @@
 package com.qfin.qfinbackend.controller;
 
 import com.qfin.qfinbackend.model.User;
+import com.qfin.qfinbackend.service.CategoryService;
 import com.qfin.qfinbackend.service.JwtUtil;
 import com.qfin.qfinbackend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,9 @@ public class AuthController {
     @Autowired
     private JwtUtil jwtUtil;
 
+    @Autowired
+    private CategoryService categoryService;
+
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         try {
@@ -32,6 +36,10 @@ public class AuthController {
             user.setPassword(request.getPassword());
 
             User savedUser = userService.register(user);
+            
+            // Initialize default categories for the new user
+            categoryService.initializeDefaultCategories(savedUser.getId());
+            
             String token = jwtUtil.generateToken(savedUser.getEmail());
 
             Map<String, Object> response = new HashMap<>();
@@ -85,6 +93,20 @@ public class AuthController {
         }
     }
 
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request, @RequestHeader("Authorization") String authHeader) {
+        try {
+            String token = authHeader.substring(7); // Remove "Bearer "
+            String email = jwtUtil.extractUsername(token);
+            
+            userService.changePassword(email, request.getCurrentPassword(), request.getNewPassword());
+            
+            return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     public static class RegisterRequest {
         private String name;
         private String email;
@@ -119,5 +141,16 @@ public class AuthController {
         public void setName(String name) { this.name = name; }
         public String getEmail() { return email; }
         public void setEmail(String email) { this.email = email; }
+    }
+
+    public static class ChangePasswordRequest {
+        private String currentPassword;
+        private String newPassword;
+
+        // getters and setters
+        public String getCurrentPassword() { return currentPassword; }
+        public void setCurrentPassword(String currentPassword) { this.currentPassword = currentPassword; }
+        public String getNewPassword() { return newPassword; }
+        public void setNewPassword(String newPassword) { this.newPassword = newPassword; }
     }
 }

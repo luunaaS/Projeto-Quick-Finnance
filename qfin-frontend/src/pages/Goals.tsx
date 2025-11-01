@@ -75,18 +75,30 @@ export function Goals() {
   };
 
   const handleAddMoney = async () => {
-    if (!selectedGoal || !addAmount) return;
+    if (!selectedGoal || !addAmount) {
+      alert('Por favor, insira um valor válido');
+      return;
+    }
+
+    const amount = parseFloat(addAmount);
+    if (isNaN(amount) || amount <= 0) {
+      alert('Por favor, insira um valor maior que zero');
+      return;
+    }
 
     try {
-      const updated = await goalsService.addToGoal(selectedGoal.id!, parseFloat(addAmount));
+      const updated = await goalsService.addToGoal(selectedGoal.id!, amount);
       if (updated) {
         setGoals(prev => prev.map(g => g.id === updated.id ? updated : g));
         setAddAmount('');
         setIsAddMoneyDialogOpen(false);
         setSelectedGoal(null);
+      } else {
+        alert('Erro ao adicionar valor à meta');
       }
     } catch (error) {
       console.error('Error adding money to goal:', error);
+      alert('Erro ao adicionar valor à meta');
     }
   };
 

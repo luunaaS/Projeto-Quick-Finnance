@@ -96,11 +96,50 @@ class ApiService {
 
   // Update profile
   async updateProfile(userData: UpdateProfileRequest): Promise<ApiResponse<AuthResponse>> {
-    return this.request<AuthResponse>(`${API_CONFIG.ENDPOINTS.LOGIN.replace('/login', '/profile')}`, {
+    return this.request<AuthResponse>('/api/auth/profile', {
       method: 'PUT',
       body: JSON.stringify(userData),
+    });
+  }
+
+  // Change password
+  async changePassword(currentPassword: string, newPassword: string): Promise<ApiResponse<{ message: string }>> {
+    return this.request<{ message: string }>('/api/auth/change-password', {
+      method: 'PUT',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+  }
+
+  // Generic GET method
+  async get<T>(endpoint: string): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'GET',
+    });
+  }
+
+  // Generic POST method
+  async post<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'POST',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
+  // Generic PUT method
+  async put<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'PUT',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
+  // Generic DELETE method
+  async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'DELETE',
     });
   }
 }
 
 export const apiService = new ApiService();
+export default apiService;
