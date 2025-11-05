@@ -26,7 +26,7 @@ O sistema prioriza simplicidade: sem integrações externas complexas (ex.: APIs
 Para mais detalhes, veja a seção de análise de linguagens no histórico do projeto ou execute `npm list` após instalação.
 
 ## Pré-requisitos
-- Java JDK 17 ou superior instalado.
+- Java JDK 17 instalado.
 - Maven para gerenciamento de dependências do backend.
 - Node.js (versão 18 ou superior) para o ambiente de frontend.
 - Git para clonar o repositório.
