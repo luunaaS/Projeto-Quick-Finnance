@@ -90,6 +90,28 @@ export function Header() {
           >
             Financiamentos
           </Button>
+          <Button 
+            variant="ghost"
+            className="hover:bg-blue-50"
+            style={{ 
+              color: isActive('/goals') ? '#1E3A8A' : '#6B7280',
+              fontWeight: isActive('/goals') ? '600' : '400'
+            }}
+            onClick={() => navigate('/goals')}
+          >
+            Metas
+          </Button>
+          <Button 
+            variant="ghost"
+            className="hover:bg-blue-50"
+            style={{ 
+              color: isActive('/reports') ? '#1E3A8A' : '#6B7280',
+              fontWeight: isActive('/reports') ? '600' : '400'
+            }}
+            onClick={() => navigate('/reports')}
+          >
+            Relatórios
+          </Button>
         </nav>
 
         <div className="flex items-center gap-4">

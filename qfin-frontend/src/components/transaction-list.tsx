@@ -2,15 +2,7 @@ import { TrendingUp, TrendingDown, Trash2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
-
-interface Transaction {
-  id: number;
-  type: 'INCOME' | 'EXPENSE';
-  amount: number;
-  category: string;
-  description: string;
-  date: string;
-}
+import type { Transaction } from '../types';
 
 interface TransactionListProps {
   transactions: Transaction[];

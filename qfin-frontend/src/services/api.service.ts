@@ -1,33 +1,11 @@
 import { API_CONFIG, getAuthHeaders } from '../config/api';
-
-// Tipos para as respostas da API
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  error?: string;
-}
-
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface RegisterRequest {
-  name: string;
-  email: string;
-  password: string;
-}
-
-export interface AuthResponse {
-  user: {
-    id: string;
-    name: string;
-    email: string;
-  };
-  token: string;
-  refreshToken?: string;
-}
+import type { 
+  ApiResponse, 
+  LoginRequest, 
+  RegisterRequest,
+  UpdateProfileRequest,
+  AuthResponse 
+} from '../types';
 
 class ApiService {
   private baseURL: string;
@@ -55,9 +33,11 @@ class ApiService {
       const data = await response.json();
 
       if (!response.ok) {
+        // O backend pode retornar 'error' ou 'message'
+        const errorMessage = data.error || data.message || 'Erro na requisição';
         return {
           success: false,
-          error: data.message || 'Erro na requisição',
+          error: errorMessage,
         };
       }
 
@@ -113,6 +93,53 @@ class ApiService {
       body: JSON.stringify({ refreshToken }),
     });
   }
+
+  // Update profile
+  async updateProfile(userData: UpdateProfileRequest): Promise<ApiResponse<AuthResponse>> {
+    return this.request<AuthResponse>('/api/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(userData),
+    });
+  }
+
+  // Change password
+  async changePassword(currentPassword: string, newPassword: string): Promise<ApiResponse<{ message: string }>> {
+    return this.request<{ message: string }>('/api/auth/change-password', {
+      method: 'PUT',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+  }
+
+  // Generic GET method
+  async get<T>(endpoint: string): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'GET',
+    });
+  }
+
+  // Generic POST method
+  async post<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'POST',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
+  // Generic PUT method
+  async put<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'PUT',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
+  // Generic DELETE method
+  async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'DELETE',
+    });
+  }
 }
 
 export const apiService = new ApiService();
+export default apiService;

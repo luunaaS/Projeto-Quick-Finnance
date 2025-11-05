@@ -6,22 +6,14 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Textarea } from "./ui/textarea";
-
-interface Transaction {
-  id: number;
-  type: 'INCOME' | 'EXPENSE';
-  amount: number;
-  category: string;
-  description: string;
-  date: string;
-}
+import type { Transaction } from '../types';
 
 interface TransactionFormProps {
   onAddTransaction: (transaction: Omit<Transaction, 'id'>) => void;
 }
 
 export function TransactionForm({ onAddTransaction }: TransactionFormProps) {
-  const [type, setType] = useState<'INCOME' | 'EXPENSE'>('EXPENSE');
+  const [type, setType] = useState<'INCOME' | 'EXPENSE'>('INCOME');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');

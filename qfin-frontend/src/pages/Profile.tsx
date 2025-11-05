@@ -1,30 +1,105 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '../components/header';
 import { useAuth } from '../contexts/AuthContext';
+import { transactionsService } from '../services/transactions.service';
+import { financingService } from '../services/financing.service';
+import { apiService } from '../services/api.service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Avatar, AvatarFallback } from '../components/ui/avatar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { User, Mail, Lock, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export function Profile() {
-  const { user, logout } = useAuth();
+  const { user, logout, token, updateProfile } = useAuth();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
+  const [transactionCount, setTransactionCount] = useState(0);
+  const [financingCount, setFinancingCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  useEffect(() => {
+    loadStatistics();
+  }, []);
+
+  const loadStatistics = async () => {
+    if (!token) return;
+    
+    try {
+      setLoading(true);
+      const transactions = await transactionsService.getTransactions();
+      const financings = await financingService.getAllFinancings();
+      
+      setTransactionCount(transactions.length);
+      setFinancingCount(financings.length);
+    } catch (error) {
+      console.error('Error loading statistics:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implementar atualização de perfil no backend
-    setIsEditing(false);
+    
+    try {
+      const result = await updateProfile(name, email);
+      
+      if (result.success) {
+        setIsEditing(false);
+        alert('Perfil atualizado com sucesso!');
+      } else {
+        alert(result.error || 'Erro ao atualizar perfil');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Erro ao atualizar perfil');
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (newPassword !== confirmPassword) {
+      alert('As senhas não coincidem');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      alert('A nova senha deve ter pelo menos 6 caracteres');
+      return;
+    }
+
+    try {
+      const response = await apiService.changePassword(currentPassword, newPassword);
+      
+      if (response.success) {
+        alert('Senha alterada com sucesso!');
+        setIsPasswordDialogOpen(false);
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        alert(response.error || 'Erro ao alterar senha');
+      }
+    } catch (error) {
+      console.error('Error changing password:', error);
+      alert('Erro ao alterar senha');
+    }
   };
 
   const getInitials = (name: string) => {
@@ -168,18 +243,8 @@ export function Profile() {
                 <h4 className="font-medium">Alterar Senha</h4>
                 <p className="text-sm text-gray-600">Atualize sua senha periodicamente</p>
               </div>
-              <Button variant="outline">
+              <Button variant="outline" onClick={() => setIsPasswordDialogOpen(true)}>
                 Alterar
-              </Button>
-            </div>
-
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div>
-                <h4 className="font-medium">Notificações</h4>
-                <p className="text-sm text-gray-600">Configure suas preferências de notificação</p>
-              </div>
-              <Button variant="outline">
-                Configurar
               </Button>
             </div>
 
@@ -217,16 +282,96 @@ export function Profile() {
 
               <div className="p-4 bg-green-50 rounded-lg">
                 <p className="text-sm text-green-900 font-medium">Transações Registradas</p>
-                <p className="text-2xl font-bold text-green-600">-</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {loading ? '...' : transactionCount}
+                </p>
               </div>
 
               <div className="p-4 bg-orange-50 rounded-lg">
                 <p className="text-sm text-orange-900 font-medium">Financiamentos Ativos</p>
-                <p className="text-2xl font-bold text-orange-600">-</p>
+                <p className="text-2xl font-bold text-orange-600">
+                  {loading ? '...' : financingCount}
+                </p>
               </div>
             </div>
           </CardContent>
         </Card>
+
+        {/* Dialog para alterar senha */}
+        <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle style={{ color: '#1E3A8A' }}>Alterar Senha</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="currentPassword">Senha Atual</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="currentPassword"
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="pl-10"
+                    placeholder="Digite sua senha atual"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">Nova Senha</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="pl-10"
+                    placeholder="Digite a nova senha"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="pl-10"
+                    placeholder="Confirme a nova senha"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <Button type="submit" className="flex-1" style={{ backgroundColor: '#1E3A8A' }}>
+                  Alterar Senha
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsPasswordDialogOpen(false);
+                    setCurrentPassword('');
+                    setNewPassword('');
+                    setConfirmPassword('');
+                  }}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );

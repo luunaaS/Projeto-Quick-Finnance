@@ -10,8 +10,9 @@ interface User {
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (name: string, email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  updateProfile: (name: string, email: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   isAuthenticated: boolean;
   loading: boolean;
@@ -36,7 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       const response = await apiService.login({ email, password });
       
@@ -48,17 +49,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('qfin_user', JSON.stringify(userData));
         localStorage.setItem('qfin_token', authToken);
         
-        return true;
+        return { success: true };
       }
       
-      return false;
+      return { success: false, error: response.error || 'Erro ao fazer login' };
     } catch (error) {
       console.error('Login error:', error);
-      return false;
+      return { success: false, error: 'Erro ao conectar com o servidor' };
     }
   };
 
-  const register = async (name: string, email: string, password: string): Promise<boolean> => {
+  const register = async (name: string, email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       const response = await apiService.register({ name, email, password });
       
@@ -70,13 +71,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('qfin_user', JSON.stringify(userData));
         localStorage.setItem('qfin_token', authToken);
         
-        return true;
+        return { success: true };
       }
       
-      return false;
+      return { success: false, error: response.error || 'Erro ao criar conta' };
     } catch (error) {
       console.error('Register error:', error);
-      return false;
+      return { success: false, error: 'Erro ao conectar com o servidor' };
+    }
+  };
+
+  const updateProfile = async (name: string, email: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const response = await apiService.updateProfile({ name, email });
+      
+      if (response.success && response.data) {
+        const { user: userData, token: authToken } = response.data;
+        
+        setUser(userData);
+        setToken(authToken);
+        localStorage.setItem('qfin_user', JSON.stringify(userData));
+        localStorage.setItem('qfin_token', authToken);
+        
+        return { success: true };
+      }
+      
+      return { success: false, error: response.error };
+    } catch (error) {
+      console.error('Update profile error:', error);
+      return { success: false, error: 'Erro ao atualizar perfil' };
     }
   };
 
@@ -94,6 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         token,
         login,
         register,
+        updateProfile,
         logout,
         isAuthenticated: !!user && !!token,
         loading,

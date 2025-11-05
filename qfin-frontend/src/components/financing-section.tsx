@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CreditCard, Plus, Calendar, DollarSign } from "lucide-react";
+import { CreditCard, Plus, Calendar } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
@@ -7,16 +7,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Badge } from "./ui/badge";
-
-interface Financing {
-  id?: number;
-  name: string;
-  totalAmount: number;
-  remainingAmount: number;
-  monthlyPayment: number;
-  type: string;
-  endDate: string;
-}
+import type { Financing } from '../types';
 
 interface FinancingSectionProps {
   financings: Financing[];
@@ -68,6 +59,18 @@ export function FinancingSection({ financings, onAddFinancing }: FinancingSectio
 
   const getProgressPercentage = (total: number, remaining: number) => {
     return ((total - remaining) / total) * 100;
+  };
+
+  const getTypeLabel = (type: string) => {
+    const typeLabels: Record<string, string> = {
+      'CAR_FINANCING': 'Veículo',
+      'MORTGAGE': 'Imóvel',
+      'PERSONAL_LOAN': 'Pessoal',
+      'STUDENT_LOAN': 'Estudantil',
+      'LOAN': 'Empréstimo',
+      'OTHER': 'Outros'
+    };
+    return typeLabels[type] || type;
   };
 
   return (
@@ -167,11 +170,12 @@ export function FinancingSection({ financings, onAddFinancing }: FinancingSectio
                       <SelectValue placeholder="Selecione o tipo" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Veículo">Veículo</SelectItem>
-                      <SelectItem value="Imóvel">Imóvel</SelectItem>
-                      <SelectItem value="Pessoal">Pessoal</SelectItem>
-                      <SelectItem value="Cartão de Crédito">Cartão de Crédito</SelectItem>
-                      <SelectItem value="Outros">Outros</SelectItem>
+                      <SelectItem value="CAR_FINANCING">Veículo</SelectItem>
+                      <SelectItem value="MORTGAGE">Imóvel</SelectItem>
+                      <SelectItem value="PERSONAL_LOAN">Pessoal</SelectItem>
+                      <SelectItem value="STUDENT_LOAN">Estudantil</SelectItem>
+                      <SelectItem value="LOAN">Empréstimo</SelectItem>
+                      <SelectItem value="OTHER">Outros</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -212,7 +216,7 @@ export function FinancingSection({ financings, onAddFinancing }: FinancingSectio
                         color: '#6B7280'
                       }}
                     >
-                      {financing.type}
+                      {getTypeLabel(financing.type)}
                     </Badge>
                   </div>
                   <div className="text-right">

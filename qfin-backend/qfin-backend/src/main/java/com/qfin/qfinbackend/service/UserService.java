@@ -37,4 +37,34 @@ public class UserService {
         }
         return Optional.empty();
     }
+
+    public User updateProfile(String currentEmail, String newName, String newEmail) {
+        User user = userRepository.findByEmail(currentEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // Se o email mudou, verificar se o novo email já existe
+        if (!currentEmail.equals(newEmail)) {
+            if (userRepository.findByEmail(newEmail).isPresent()) {
+                throw new RuntimeException("Email already exists");
+            }
+            user.setEmail(newEmail);
+        }
+        
+        user.setName(newName);
+        return userRepository.save(user);
+    }
+
+    public void changePassword(String email, String currentPassword, String newPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // Verificar se a senha atual está correta
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new RuntimeException("Current password is incorrect");
+        }
+        
+        // Atualizar para a nova senha
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
 }
