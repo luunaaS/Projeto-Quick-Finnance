@@ -3,7 +3,7 @@
 ## Descrição
 O **Quick Finnance** é um sistema web simples e intuitivo para gerenciamento de finanças pessoais ou empresariais. Desenvolvido como um protótipo full-stack, ele permite que usuários registrem receitas e despesas, visualizem relatórios de saldo, categorizem transações e gerem gráficos básicos de gastos. Ideal para quem busca uma ferramenta rápida para controlar o orçamento sem complexidades excessivas.
 
-O projeto foi criado com foco em usabilidade, utilizando tecnologias web modernas para uma interface responsiva que funciona em desktops e dispositivos móveis. É um exemplo de aplicação MERN-like (mas simplificada com Node.js), demonstrando conceitos de frontend, backend e persistência de dados.
+O projeto foi criado com foco em usabilidade, utilizando tecnologias web modernas para uma interface responsiva que funciona em desktops e dispositivos móveis. A arquitetura segue o padrão de aplicação de página única (SPA) com um backend robusto, demonstrando conceitos de frontend, backend e persistência de dados.
 
 ### Funcionalidades Principais
 - **Autenticação de Usuários**: Login e registro seguro para múltiplos perfis.
@@ -16,8 +16,8 @@ O sistema prioriza simplicidade: sem integrações externas complexas (ex.: APIs
 
 ## Tecnologias Utilizadas
 - **Frontend**: HTML, CSS, TypeScript e JavaScript.
-- **Backend**: Node.js com Express.js para servidor e rotas API.
-- **Banco de Dados**: SQLite (leve e local) para armazenamento de usuários e transações; queries SQL para operações CRUD.
+- **Backend**: Java 17 com Spring Boot para o servidor e API REST.
+- **Banco de Dados**: PostgreSQL para ambiente de produção e H2 para desenvolvimento e testes.
 - **Outras Ferramentas**: 
   - Chart.js para visualizações gráficas.
   - Nodemon para desenvolvimento local.
@@ -26,7 +26,9 @@ O sistema prioriza simplicidade: sem integrações externas complexas (ex.: APIs
 Para mais detalhes, veja a seção de análise de linguagens no histórico do projeto ou execute `npm list` após instalação.
 
 ## Pré-requisitos
-- Node.js (versão 14 ou superior) instalado.
+- Java JDK 17 ou superior instalado.
+- Maven para gerenciamento de dependências do backend.
+- Node.js (versão 18 ou superior) para o ambiente de frontend.
 - Git para clonar o repositório.
 - Um editor de código como VS Code.
 - Navegador web moderno (Chrome, Firefox).
