@@ -1,4 +1,4 @@
-import { DollarSign, Menu, User, LogOut, Settings } from "lucide-react";
+import { DollarSign, Menu, User, LogOut, Settings, HelpCircle } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "./ui/button";
@@ -112,6 +112,17 @@ export function Header() {
           >
             Relatórios
           </Button>
+          <Button 
+            variant="ghost"
+            className="hover:bg-blue-50"
+            style={{ 
+              color: isActive('/faq') ? '#1E3A8A' : '#6B7280',
+              fontWeight: isActive('/faq') ? '600' : '400'
+            }}
+            onClick={() => navigate('/faq')}
+          >
+            FAQ
+          </Button>
         </nav>
 
         <div className="flex items-center gap-4">
@@ -137,6 +148,10 @@ export function Header() {
               <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer">
                 <Settings className="mr-2 h-4 w-4" />
                 Perfil
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/faq')} className="cursor-pointer">
+                <HelpCircle className="mr-2 h-4 w-4" />
+                Ajuda (FAQ)
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} className="text-red-600 cursor-pointer">

@@ -23,7 +23,7 @@ export function Reports() {
 
   useEffect(() => {
     loadReportData();
-  }, []);
+  }, [filters]);
 
   const loadReportData = async () => {
     setLoading(true);
@@ -44,7 +44,6 @@ export function Reports() {
 
   const handleFilterChange = (newFilters: any) => {
     setFilters(newFilters);
-    loadReportData();
   };
 
   const handleExportTransactionsCSV = async () => {
