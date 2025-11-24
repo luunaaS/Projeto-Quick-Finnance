@@ -7,6 +7,7 @@ import { Financings } from './pages/Financings';
 import { Goals } from './pages/Goals';
 import { Reports } from './pages/Reports';
 import { Profile } from './pages/Profile';
+import { FAQ } from './pages/FAQ';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 export default function App() {
@@ -59,6 +60,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <Profile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/faq"
+        element={
+          <ProtectedRoute>
+            <FAQ />
           </ProtectedRoute>
         }
       />
