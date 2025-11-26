@@ -10,7 +10,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import { User, Mail, Lock, LogOut } from 'lucide-react';
+import { User, Mail, Lock, LogOut, Tag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export function Profile() {
@@ -312,6 +312,21 @@ export function Profile() {
               </div>
               <Button variant="outline" onClick={() => setIsPasswordDialogOpen(true)}>
                 Alterar
+              </Button>
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div>
+                <h4 className="font-medium text-blue-900">Gerenciar Categorias</h4>
+                <p className="text-sm text-blue-700">Crie, edite ou exclua categorias personalizadas</p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => navigate('/categories')}
+                className="border-blue-600 text-blue-600 hover:bg-blue-50"
+              >
+                <Tag className="h-4 w-4 mr-2" />
+                Gerenciar
               </Button>
             </div>
 

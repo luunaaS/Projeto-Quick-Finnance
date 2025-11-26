@@ -95,6 +95,57 @@ class FinancingService {
       return false;
     }
   }
+
+  async getPaymentsByFinancing(financingId: number): Promise<any[]> {
+    try {
+      const response = await fetch(`${this.baseURL}${API_CONFIG.ENDPOINTS.FINANCINGS}/${financingId}/payments`, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao buscar pagamentos');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching payments:', error);
+      return [];
+    }
+  }
+
+  async addPayment(financingId: number, payment: any): Promise<any | null> {
+    try {
+      const response = await fetch(`${this.baseURL}${API_CONFIG.ENDPOINTS.FINANCINGS}/${financingId}/payments`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payment),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao adicionar pagamento');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error adding payment:', error);
+      return null;
+    }
+  }
+
+  async deletePayment(financingId: number, paymentId: number): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.baseURL}${API_CONFIG.ENDPOINTS.FINANCINGS}/${financingId}/payments/${paymentId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.error('Error deleting payment:', error);
+      return false;
+    }
+  }
 }
 
 export const financingService = new FinancingService();

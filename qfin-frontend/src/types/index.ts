@@ -116,3 +116,17 @@ export interface UpdateCategoryRequest {
   name: string;
   parentId?: number | null;
 }
+
+export interface Payment {
+  id?: number;
+  amount: number;
+  paymentDate: string;
+  description?: string;
+  financingId?: number;
+}
+
+export interface CreatePaymentRequest {
+  amount: number;
+  paymentDate: string;
+  description?: string;
+}

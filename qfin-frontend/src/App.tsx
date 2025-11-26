@@ -8,6 +8,7 @@ import { Goals } from './pages/Goals';
 import { Reports } from './pages/Reports';
 import { Profile } from './pages/Profile';
 import { FAQ } from './pages/FAQ';
+import { Categories } from './pages/Categories';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 export default function App() {
@@ -68,6 +69,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <FAQ />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/categories"
+        element={
+          <ProtectedRoute>
+            <Categories />
           </ProtectedRoute>
         }
       />

@@ -6,7 +6,7 @@ import { ReportCharts } from '../components/report-charts';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
-import { Download, FileText, FileSpreadsheet } from 'lucide-react';
+import { FileText, FileSpreadsheet } from 'lucide-react';
 import { reportsService, type ReportRequest, type ReportSummary } from '../services/reports.service';
 import { toast } from 'sonner';
 

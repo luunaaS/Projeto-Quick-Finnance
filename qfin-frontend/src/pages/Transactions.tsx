@@ -55,6 +55,17 @@ export function Transactions() {
     }
   };
 
+  const handleUpdateTransaction = async (id: number, updatedTransaction: Partial<Transaction>) => {
+    try {
+      const updated = await transactionsService.updateTransaction(id, updatedTransaction);
+      if (updated) {
+        setTransactions(prev => prev.map(t => t.id === id ? updated : t));
+      }
+    } catch (error) {
+      console.error('Error updating transaction:', error);
+    }
+  };
+
   const filteredTransactions = filter === 'all' 
     ? transactions 
     : transactions.filter(t => t.type === filter);
@@ -158,6 +169,7 @@ export function Transactions() {
                 <TransactionList 
                   transactions={filteredTransactions} 
                   onDeleteTransaction={handleDeleteTransaction}
+                  onUpdateTransaction={handleUpdateTransaction}
                 />
               )}
             </div>
