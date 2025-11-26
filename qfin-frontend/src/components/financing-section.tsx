@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { CreditCard, Plus, Calendar, DollarSign, Edit, Trash2 } from "lucide-react";
+import { toast } from 'sonner';
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
@@ -15,9 +16,10 @@ interface FinancingSectionProps {
   onAddFinancing: (financing: Omit<Financing, 'id'>) => void;
   onUpdateFinancing: (id: number, financing: Partial<Financing>) => void;
   onDeleteFinancing: (id: number) => void;
+  onRefresh?: () => void;
 }
 
-export function FinancingSection({ financings, onAddFinancing, onUpdateFinancing, onDeleteFinancing }: FinancingSectionProps) {
+export function FinancingSection({ financings, onAddFinancing, onUpdateFinancing, onDeleteFinancing, onRefresh }: FinancingSectionProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
@@ -129,16 +131,18 @@ export function FinancingSection({ financings, onAddFinancing, onUpdateFinancing
     const result = await financingService.addPayment(selectedFinancing.id!, payment);
     
     if (result) {
-      alert('Pagamento adicionado com sucesso!');
+      toast.success('Pagamento adicionado com sucesso!');
       setPaymentAmount('');
       setPaymentDate('');
       setPaymentDescription('');
       setIsPaymentOpen(false);
       
-      // Recarregar a página ou atualizar o estado
-      window.location.reload();
+      // Atualizar a lista de financiamentos sem recarregar a página
+      if (onRefresh) {
+        onRefresh();
+      }
     } else {
-      alert('Erro ao adicionar pagamento');
+      toast.error('Erro ao adicionar pagamento');
     }
   };
 
@@ -156,12 +160,11 @@ export function FinancingSection({ financings, onAddFinancing, onUpdateFinancing
       const success = await financingService.deletePayment(selectedFinancing.id!, paymentId);
       
       if (success) {
-        alert('Pagamento excluído com sucesso!');
+        toast.success('Pagamento excluído com sucesso!');
         const paymentsData = await financingService.getPaymentsByFinancing(selectedFinancing.id!);
         setPayments(paymentsData);
-        window.location.reload();
       } else {
-        alert('Erro ao excluir pagamento');
+        toast.error('Erro ao excluir pagamento');
       }
     }
   };

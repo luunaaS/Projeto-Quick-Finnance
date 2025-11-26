@@ -138,6 +138,7 @@ export function Financings() {
             onAddFinancing={handleAddFinancing}
             onUpdateFinancing={handleUpdateFinancing}
             onDeleteFinancing={handleDeleteFinancing}
+            onRefresh={loadFinancings}
           />
         )}
 

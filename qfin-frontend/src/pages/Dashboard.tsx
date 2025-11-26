@@ -165,6 +165,7 @@ export function Dashboard() {
           onAddFinancing={addFinancing}
           onUpdateFinancing={updateFinancing}
           onDeleteFinancing={deleteFinancing}
+          onRefresh={loadData}
         />
       </main>
     </div>
