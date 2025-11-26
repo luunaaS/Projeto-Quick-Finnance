@@ -96,13 +96,15 @@ class GoalsService {
       });
 
       if (!response.ok) {
-        throw new Error('Erro ao adicionar valor à meta');
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || 'Erro ao adicionar valor à meta';
+        throw new Error(errorMessage);
       }
 
       return await response.json();
     } catch (error) {
       console.error('Error adding to goal:', error);
-      return null;
+      throw error;
     }
   }
 

@@ -93,12 +93,14 @@ export function Goals() {
         setAddAmount('');
         setIsAddMoneyDialogOpen(false);
         setSelectedGoal(null);
+        alert('Valor adicionado com sucesso!');
       } else {
         alert('Erro ao adicionar valor à meta');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding money to goal:', error);
-      alert('Erro ao adicionar valor à meta');
+      const errorMessage = error?.message || 'Erro ao adicionar valor à meta';
+      alert(errorMessage);
     }
   };
 

@@ -82,7 +82,7 @@ public class GoalController {
     }
     
     @PatchMapping("/{id}/add")
-    public ResponseEntity<Goal> addToGoal(
+    public ResponseEntity<?> addToGoal(
             @PathVariable Long id,
             @RequestBody Map<String, Double> request,
             Authentication authentication) {
@@ -90,14 +90,16 @@ public class GoalController {
             User user = getCurrentUser(authentication);
             Double amount = request.get("amount");
             if (amount == null || amount <= 0) {
-                return ResponseEntity.badRequest().build();
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid amount"));
             }
             Goal updatedGoal = goalService.addToGoal(id, amount, user);
             return ResponseEntity.ok(updatedGoal);
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Internal server error"));
         }
     }
     
