@@ -41,6 +41,28 @@ export function Financings() {
     }
   };
 
+  const handleUpdateFinancing = async (id: number, updatedFinancing: Partial<Financing>) => {
+    try {
+      const updated = await financingService.updateFinancing(id, updatedFinancing);
+      if (updated) {
+        setFinancings(prev => prev.map(f => f.id === id ? updated : f));
+      }
+    } catch (error) {
+      console.error('Error updating financing:', error);
+    }
+  };
+
+  const handleDeleteFinancing = async (id: number) => {
+    try {
+      const success = await financingService.deleteFinancing(id);
+      if (success) {
+        setFinancings(prev => prev.filter(f => f.id !== id));
+      }
+    } catch (error) {
+      console.error('Error deleting financing:', error);
+    }
+  };
+
   const totalFinanced = financings.reduce((sum, f) => sum + f.totalAmount, 0);
   const totalRemaining = financings.reduce((sum, f) => sum + f.remainingAmount, 0);
   const totalMonthly = financings.reduce((sum, f) => sum + f.monthlyPayment, 0);
@@ -114,6 +136,8 @@ export function Financings() {
           <FinancingSection 
             financings={financings}
             onAddFinancing={handleAddFinancing}
+            onUpdateFinancing={handleUpdateFinancing}
+            onDeleteFinancing={handleDeleteFinancing}
           />
         )}
 
