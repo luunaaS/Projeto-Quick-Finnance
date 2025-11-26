@@ -65,7 +65,7 @@ export function ReportCharts({ summary }: ReportChartsProps) {
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {incomeData.map((entry, index) => (
+                  {incomeData.map((_entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
@@ -96,7 +96,7 @@ export function ReportCharts({ summary }: ReportChartsProps) {
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {expenseData.map((entry, index) => (
+                  {expenseData.map((_entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>

@@ -95,9 +95,6 @@ class FinancingService {
       return false;
     }
   }
-}
-
-export const financingService = new FinancingService();
 
   async getPaymentsByFinancing(financingId: number): Promise<any[]> {
     try {
@@ -149,3 +146,6 @@ export const financingService = new FinancingService();
       return false;
     }
   }
+}
+
+export const financingService = new FinancingService();

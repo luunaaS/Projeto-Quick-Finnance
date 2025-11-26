@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Progress } from '../components/ui/progress';
 import { Badge } from '../components/ui/badge';
-import { Target, Plus, TrendingUp, Calendar, DollarSign, CheckCircle, XCircle, Trash2 } from 'lucide-react';
+import { Plus, Target, DollarSign, TrendingUp, CheckCircle, Calendar, Trash2 } from 'lucide-react';
 
 export function Goals() {
   const { isAuthenticated } = useAuth();

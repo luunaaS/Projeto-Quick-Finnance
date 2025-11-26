@@ -60,6 +60,17 @@ export function Dashboard() {
     }
   };
 
+  const updateTransaction = async (id: number, updatedTransaction: Partial<Transaction>) => {
+    try {
+      const updated = await transactionsService.updateTransaction(id, updatedTransaction);
+      if (updated) {
+        setTransactions(prev => prev.map(t => t.id === id ? updated : t));
+      }
+    } catch (error) {
+      console.error('Error updating transaction:', error);
+    }
+  };
+
   const addFinancing = async (newFinancing: Omit<Financing, 'id'>) => {
     try {
       const created = await financingService.createFinancing(newFinancing);
@@ -68,6 +79,28 @@ export function Dashboard() {
       }
     } catch (error) {
       console.error('Error adding financing:', error);
+    }
+  };
+
+  const updateFinancing = async (id: number, updatedFinancing: Partial<Financing>) => {
+    try {
+      const updated = await financingService.updateFinancing(id, updatedFinancing);
+      if (updated) {
+        setFinancings(prev => prev.map(f => f.id === id ? updated : f));
+      }
+    } catch (error) {
+      console.error('Error updating financing:', error);
+    }
+  };
+
+  const deleteFinancing = async (id: number) => {
+    try {
+      const success = await financingService.deleteFinancing(id);
+      if (success) {
+        setFinancings(prev => prev.filter(f => f.id !== id));
+      }
+    } catch (error) {
+      console.error('Error deleting financing:', error);
     }
   };
 
@@ -121,6 +154,7 @@ export function Dashboard() {
             <TransactionList 
               transactions={transactions} 
               onDeleteTransaction={deleteTransaction}
+              onUpdateTransaction={updateTransaction}
             />
           </div>
         </div>
@@ -129,6 +163,8 @@ export function Dashboard() {
         <FinancingSection 
           financings={financings}
           onAddFinancing={addFinancing}
+          onUpdateFinancing={updateFinancing}
+          onDeleteFinancing={deleteFinancing}
         />
       </main>
     </div>
