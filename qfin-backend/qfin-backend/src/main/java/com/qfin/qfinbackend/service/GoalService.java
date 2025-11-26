@@ -63,8 +63,12 @@ public class GoalService {
         Optional<Goal> optionalGoal = getGoalById(id, user);
         if (optionalGoal.isPresent()) {
             Goal goal = optionalGoal.get();
-            goal.addAmount(amount);
-            return goalRepository.save(goal);
+            try {
+                goal.addAmount(amount);
+                return goalRepository.save(goal);
+            } catch (IllegalStateException e) {
+                throw new RuntimeException("Cannot add amount: " + e.getMessage());
+            }
         }
         throw new RuntimeException("Goal not found or unauthorized");
     }

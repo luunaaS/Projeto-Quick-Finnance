@@ -10,8 +10,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.Authentication;
+import com.qfin.qfinbackend.repository.UserRepository;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -19,39 +19,48 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/reports")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000", "https://3000-i1482b2on3ttpkl64sz68-5db5ba67.manusvm.computer"})
 public class ReportController {
 
     @Autowired
     private ReportService reportService;
+    
+    @Autowired
+    private UserRepository userRepository;
+    
+    private User getCurrentUser(Authentication authentication) {
+        String email = authentication.getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
 
     @PostMapping("/transactions")
     public ResponseEntity<List<Transaction>> getTransactions(
-            @AuthenticationPrincipal UserDetails userDetails,
+            Authentication authentication,
             @RequestBody ReportRequestDTO request) {
         
-        User user = (User) userDetails;
+        User user = getCurrentUser(authentication);
         List<Transaction> transactions = reportService.getTransactionsByFilters(user.getId(), request);
         return ResponseEntity.ok(transactions);
     }
 
     @PostMapping("/summary")
     public ResponseEntity<ReportSummaryDTO> getSummary(
-            @AuthenticationPrincipal UserDetails userDetails,
+            Authentication authentication,
             @RequestBody ReportRequestDTO request) {
         
-        User user = (User) userDetails;
+        User user = getCurrentUser(authentication);
         ReportSummaryDTO summary = reportService.getReportSummary(user.getId(), request);
         return ResponseEntity.ok(summary);
     }
 
     @PostMapping("/export/transactions/csv")
     public ResponseEntity<byte[]> exportTransactionsCSV(
-            @AuthenticationPrincipal UserDetails userDetails,
+            Authentication authentication,
             @RequestBody ReportRequestDTO request) {
         
         try {
-            User user = (User) userDetails;
+            User user = getCurrentUser(authentication);
             byte[] csvData = reportService.exportTransactionsToCSV(user.getId(), request);
             
             HttpHeaders headers = new HttpHeaders();
@@ -66,10 +75,10 @@ public class ReportController {
 
     @GetMapping("/export/financings/csv")
     public ResponseEntity<byte[]> exportFinancingsCSV(
-            @AuthenticationPrincipal UserDetails userDetails) {
+            Authentication authentication) {
         
         try {
-            User user = (User) userDetails;
+            User user = getCurrentUser(authentication);
             byte[] csvData = reportService.exportFinancingsToCSV(user.getId());
             
             HttpHeaders headers = new HttpHeaders();
@@ -84,11 +93,11 @@ public class ReportController {
 
     @PostMapping("/export/pdf")
     public ResponseEntity<byte[]> exportReportPDF(
-            @AuthenticationPrincipal UserDetails userDetails,
+            Authentication authentication,
             @RequestBody ReportRequestDTO request) {
         
         try {
-            User user = (User) userDetails;
+            User user = getCurrentUser(authentication);
             byte[] pdfData = reportService.exportReportToPDF(user.getId(), request);
             
             HttpHeaders headers = new HttpHeaders();

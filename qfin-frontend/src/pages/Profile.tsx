@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Avatar, AvatarFallback } from '../components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { User, Mail, Lock, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -26,9 +26,15 @@ export function Profile() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [profileImage, setProfileImage] = useState<string | null>(null);
 
   useEffect(() => {
     loadStatistics();
+    // Carregar foto de perfil do localStorage
+    const savedImage = localStorage.getItem('qfin_profile_image');
+    if (savedImage) {
+      setProfileImage(savedImage);
+    }
   }, []);
 
   const loadStatistics = async () => {
@@ -102,6 +108,38 @@ export function Profile() {
     }
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validar tamanho (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('A imagem deve ter no máximo 5MB');
+        return;
+      }
+
+      // Validar tipo
+      if (!file.type.startsWith('image/')) {
+        alert('Por favor, selecione uma imagem válida');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setProfileImage(base64String);
+        localStorage.setItem('qfin_profile_image', base64String);
+        alert('Foto de perfil atualizada com sucesso!');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setProfileImage(null);
+    localStorage.removeItem('qfin_profile_image');
+    alert('Foto de perfil removida com sucesso!');
+  };
+
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -129,21 +167,50 @@ export function Profile() {
             </CardHeader>
             <CardContent className="flex flex-col items-center space-y-4">
               <Avatar className="h-32 w-32">
-                <AvatarFallback className="text-3xl bg-blue-600 text-white">
-                  {user ? getInitials(user.name) : 'U'}
-                </AvatarFallback>
+                {profileImage ? (
+                  <AvatarImage src={profileImage} alt={user?.name} />
+                ) : (
+                  <AvatarFallback className="text-3xl bg-blue-600 text-white">
+                    {user ? getInitials(user.name) : 'U'}
+                  </AvatarFallback>
+                )}
               </Avatar>
               <div className="text-center">
                 <h3 className="font-semibold text-lg">{user?.name}</h3>
                 <p className="text-sm text-gray-600">{user?.email}</p>
               </div>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => setIsEditing(!isEditing)}
-              >
-                {isEditing ? 'Cancelar' : 'Editar Perfil'}
-              </Button>
+              <div className="w-full space-y-2">
+                <input
+                  type="file"
+                  id="profile-image"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageUpload}
+                />
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => document.getElementById('profile-image')?.click()}
+                >
+                  {profileImage ? 'Alterar Foto' : 'Adicionar Foto'}
+                </Button>
+                {profileImage && (
+                  <Button
+                    variant="outline"
+                    className="w-full text-red-600 hover:bg-red-50"
+                    onClick={handleRemoveImage}
+                  >
+                    Remover Foto
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setIsEditing(!isEditing)}
+                >
+                  {isEditing ? 'Cancelar' : 'Editar Perfil'}
+                </Button>
+              </div>
             </CardContent>
           </Card>
 

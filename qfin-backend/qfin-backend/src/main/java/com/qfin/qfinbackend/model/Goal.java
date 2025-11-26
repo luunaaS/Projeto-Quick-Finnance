@@ -133,6 +133,9 @@ public class Goal {
     
     // Business methods
     public void addAmount(Double amount) {
+        if (this.status != GoalStatus.IN_PROGRESS) {
+            throw new IllegalStateException("Cannot add amount to a goal that is not in progress");
+        }
         this.currentAmount += amount;
         if (this.currentAmount >= this.targetAmount) {
             this.status = GoalStatus.COMPLETED;

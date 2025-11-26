@@ -9,7 +9,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('qfin_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -40,17 +40,17 @@ export interface ReportSummary {
 
 export const reportsService = {
   async getTransactions(filters: ReportRequest) {
-    const response = await api.post('/api/reports/transactions', filters);
+    const response = await api.post('/reports/transactions', filters);
     return response.data;
   },
 
   async getSummary(filters: ReportRequest): Promise<ReportSummary> {
-    const response = await api.post('/api/reports/summary', filters);
+    const response = await api.post('/reports/summary', filters);
     return response.data;
   },
 
   async exportTransactionsCSV(filters: ReportRequest) {
-    const response = await api.post('/api/reports/export/transactions/csv', filters, {
+    const response = await api.post('/reports/export/transactions/csv', filters, {
       responseType: 'blob',
     });
     
@@ -64,7 +64,7 @@ export const reportsService = {
   },
 
   async exportFinancingsCSV() {
-    const response = await api.get('/api/reports/export/financings/csv', {
+    const response = await api.get('/reports/export/financings/csv', {
       responseType: 'blob',
     });
     
@@ -78,7 +78,7 @@ export const reportsService = {
   },
 
   async exportPDF(filters: ReportRequest) {
-    const response = await api.post('/api/reports/export/pdf', filters, {
+    const response = await api.post('/reports/export/pdf', filters, {
       responseType: 'blob',
     });
     
