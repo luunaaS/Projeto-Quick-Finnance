@@ -229,15 +229,55 @@ class ApiService {
   }
 
   // Profile
-  async updateProfile(name: string, email: string): Promise<{ token: string; user: { id: number; name: string; email: string } }> {
-    const data = await this.request<{ token: string; user: { id: number; name: string; email: string } }>('/auth/profile', {
+  async getProfile(): Promise<{ id: number; name: string; email: string; phone?: string; bio?: string; birthDate?: string; profileImageBase64?: string | null }> {
+    return this.request('/auth/profile');
+  }
+
+  async updateProfile(
+    name: string,
+    email: string,
+    phone?: string,
+    bio?: string,
+    birthDate?: string
+  ): Promise<{ token: string; user: { id: number; name: string; email: string; phone?: string; bio?: string; birthDate?: string; profileImageBase64?: string | null } }> {
+    const data = await this.request<{ token: string; user: { id: number; name: string; email: string; phone?: string; bio?: string; birthDate?: string; profileImageBase64?: string | null } }>('/auth/profile', {
       method: 'PUT',
-      body: JSON.stringify({ name, email }),
+      body: JSON.stringify({ name, email, phone, bio, birthDate }),
     });
     if (data?.token) {
       this.setToken(data.token);
     }
     return data;
+  }
+
+  async updateProfileDetails(payload: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    bio?: string;
+    birthDate?: string;
+  }): Promise<{ token?: string; user: { id: number; name: string; email: string; phone?: string; bio?: string; birthDate?: string; profileImageBase64?: string | null } }> {
+    const data = await this.request<{ token?: string; user: { id: number; name: string; email: string; phone?: string; bio?: string; birthDate?: string; profileImageBase64?: string | null } }>('/auth/profile/details', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+    if (data?.token) {
+      this.setToken(data.token);
+    }
+    return data;
+  }
+
+  async updateProfilePhoto(profileImageBase64: string): Promise<{ user: { id: number; name: string; email: string; phone?: string; bio?: string; birthDate?: string; profileImageBase64?: string | null } }> {
+    return this.request('/auth/profile/photo', {
+      method: 'PUT',
+      body: JSON.stringify({ profileImageBase64 }),
+    });
+  }
+
+  async deleteProfilePhoto(): Promise<{ user: { id: number; name: string; email: string; phone?: string; bio?: string; birthDate?: string; profileImageBase64?: string | null } }> {
+    return this.request('/auth/profile/photo', {
+      method: 'DELETE',
+    });
   }
 
   async changePassword(currentPassword: string, newPassword: string): Promise<{ message: string }> {

@@ -40,7 +40,14 @@ export default function App() {
   const [loginForm, setLoginForm] = useState({ email: '', password: '', name: '' });
   const [isRegistering, setIsRegistering] = useState(false);
   const [authError, setAuthError] = useState('');
-  const [currentUser, setCurrentUser] = useState({ name: '', email: '' });
+  const [currentUser, setCurrentUser] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    bio: '',
+    birthDate: '',
+    profileImageBase64: null as string | null,
+  });
 
   const mapFinancingType = (type: string): string => {
     const typeMap: Record<string, string> = {
@@ -156,7 +163,11 @@ export default function App() {
       const response = await api.login(loginForm.email, loginForm.password);
       setCurrentUser({
         name: response?.user?.name || '',
-        email: loginForm.email,
+        email: response?.user?.email || loginForm.email,
+        phone: '',
+        bio: '',
+        birthDate: '',
+        profileImageBase64: null,
       });
       setIsAuthenticated(true);
       loadData();
@@ -172,7 +183,11 @@ export default function App() {
       const response = await api.register(loginForm.name, loginForm.email, loginForm.password);
       setCurrentUser({
         name: response?.user?.name || loginForm.name,
-        email: loginForm.email,
+        email: response?.user?.email || loginForm.email,
+        phone: '',
+        bio: '',
+        birthDate: '',
+        profileImageBase64: null,
       });
       setIsAuthenticated(true);
       loadData();
