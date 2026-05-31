@@ -109,24 +109,13 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
 
         <div className="flex items-center gap-4">
           <button
-            onClick={() => onNavigate('requirements')}
-            className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-blue-50"
-            style={{ 
-              color: currentPage === 'requirements' ? '#1E3A8A' : '#6B7280',
-              backgroundColor: currentPage === 'requirements' ? '#EFF6FF' : 'transparent'
-            }}
-          >
-            <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: '#059669', color: 'white' }}>
-              NOVO
-            </span>
-            RFs
-          </button>
-          <div 
-            className="h-8 w-8 rounded-full flex items-center justify-center"
+            onClick={() => onNavigate('profile')}
+            className="h-8 w-8 rounded-full flex items-center justify-center hover:opacity-90 transition-opacity"
             style={{ backgroundColor: '#1E3A8A', color: 'white' }}
+            title="Perfil do usuário"
           >
             <User className="h-4 w-4" />
-          </div>
+          </button>
         </div>
       </div>
     </header>

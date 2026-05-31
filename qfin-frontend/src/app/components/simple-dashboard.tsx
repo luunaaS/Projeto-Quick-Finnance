@@ -1,6 +1,6 @@
 import { DashboardCards } from './dashboard-cards';
 import { FinancialChart } from './financial-chart';
-import { Bell, TrendingUp, Repeat, Globe, ArrowRight, FileText } from 'lucide-react';
+import { Bell, TrendingUp, Repeat, Globe, ArrowRight } from 'lucide-react';
 
 interface Transaction {
   id: string;
@@ -62,37 +62,6 @@ export function SimpleDashboard({ transactions, financings }: SimpleDashboardPro
         financings={safeFinancings.length}
       />
 
-      {/* Banner de Requisitos */}
-      <div 
-        className="rounded-lg border p-6 cursor-pointer hover:shadow-md transition-all"
-        style={{ 
-          background: 'linear-gradient(135deg, #1E3A8A 0%, #059669 100%)',
-          borderColor: '#1E3A8A'
-        }}
-        onClick={() => {
-          window.dispatchEvent(new CustomEvent('navigate', { detail: 'requirements' }));
-        }}
-      >
-        <div className="flex items-center justify-between text-white">
-          <div className="flex items-center gap-4">
-            <div 
-              className="h-14 w-14 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
-            >
-              <FileText className="h-7 w-7" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold mb-1">
-                Novos Requisitos Implementados
-              </h3>
-              <p className="text-sm opacity-90">
-                4 novos requisitos funcionais • Clique para ver detalhes completos
-              </p>
-            </div>
-          </div>
-          <ArrowRight className="h-6 w-6" />
-        </div>
-      </div>
 
       {/* Acesso Rápido às Novas Funcionalidades */}
       <div className="bg-white rounded-lg border shadow-sm p-6">

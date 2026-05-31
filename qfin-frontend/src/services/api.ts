@@ -55,8 +55,8 @@ class ApiService {
   }
 
   // Auth
-  async login(email: string, password: string): Promise<{ token: string }> {
-    const data = await this.request<{ token: string }>('/auth/login', {
+  async login(email: string, password: string): Promise<{ token: string; user?: { id: number; name: string; email: string } }> {
+    const data = await this.request<{ token: string; user?: { id: number; name: string; email: string } }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
@@ -64,8 +64,8 @@ class ApiService {
     return data;
   }
 
-  async register(name: string, email: string, password: string): Promise<{ token: string }> {
-    const data = await this.request<{ token: string }>('/auth/register', {
+  async register(name: string, email: string, password: string): Promise<{ token: string; user?: { id: number; name: string; email: string } }> {
+    const data = await this.request<{ token: string; user?: { id: number; name: string; email: string } }>('/auth/register', {
       method: 'POST',
       body: JSON.stringify({ name, email, password }),
     });

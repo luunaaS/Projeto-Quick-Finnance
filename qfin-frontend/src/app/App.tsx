@@ -9,7 +9,7 @@ import { NotificationsPage } from './components/pages/notifications-page';
 import { InvestmentsPage } from './components/pages/investments-page';
 import { RecurringTransactionsPage } from './components/pages/recurring-transactions-page';
 import { MultiCurrencyPage } from './components/pages/multi-currency-page';
-import { RequirementsOverview } from './components/requirements-overview';
+import { ProfilePage } from './components/pages/profile-page';
 import api from '../services/api';
 
 interface Transaction {
@@ -40,6 +40,7 @@ export default function App() {
   const [loginForm, setLoginForm] = useState({ email: '', password: '', name: '' });
   const [isRegistering, setIsRegistering] = useState(false);
   const [authError, setAuthError] = useState('');
+  const [currentUser, setCurrentUser] = useState({ name: '', email: '' });
 
   const mapFinancingType = (type: string): string => {
     const typeMap: Record<string, string> = {
@@ -70,19 +71,33 @@ export default function App() {
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const [transactionsData, financingsData] = await Promise.all([
+      const [transactionsData, financingsData, recurringData] = await Promise.all([
         api.getTransactions(),
         api.getFinancings(),
+        api.getRecurringTransactions(),
       ]);
 
-      setTransactions(transactionsData.map((t: any) => ({
+      const mappedTransactions = transactionsData.map((t: any) => ({
         id: t.id.toString(),
         type: t.type.toLowerCase() as 'income' | 'expense',
         amount: t.amount,
         category: t.category,
         description: t.description,
         date: t.date,
-      })));
+      }));
+
+      const recurringSynthetic = (recurringData || [])
+        .filter((r: any) => r && r.isActive)
+        .map((r: any) => ({
+          id: `recurring-${r.id}`,
+          type: (r.type || '').toLowerCase() as 'income' | 'expense',
+          amount: Number(r.amount) || 0,
+          category: r.category || 'Recorrente',
+          description: `${r.name || 'Recorrente'} (Recorrente)`,
+          date: r.nextProcessing || new Date().toISOString().slice(0, 10),
+        }));
+
+      setTransactions([...recurringSynthetic, ...mappedTransactions]);
 
       setFinancings(financingsData.map((f: any) => ({
         id: f.id.toString(),
@@ -138,7 +153,11 @@ export default function App() {
     e.preventDefault();
     setAuthError('');
     try {
-      await api.login(loginForm.email, loginForm.password);
+      const response = await api.login(loginForm.email, loginForm.password);
+      setCurrentUser({
+        name: response?.user?.name || '',
+        email: loginForm.email,
+      });
       setIsAuthenticated(true);
       loadData();
     } catch (error: any) {
@@ -150,7 +169,11 @@ export default function App() {
     e.preventDefault();
     setAuthError('');
     try {
-      await api.register(loginForm.name, loginForm.email, loginForm.password);
+      const response = await api.register(loginForm.name, loginForm.email, loginForm.password);
+      setCurrentUser({
+        name: response?.user?.name || loginForm.name,
+        email: loginForm.email,
+      });
       setIsAuthenticated(true);
       loadData();
     } catch (error: any) {
@@ -355,8 +378,13 @@ export default function App() {
         return <RecurringTransactionsPage />;
       case 'multicurrency':
         return <MultiCurrencyPage />;
-      case 'requirements':
-        return <RequirementsOverview />;
+      case 'profile':
+        return (
+          <ProfilePage
+            currentUser={currentUser}
+            onUserUpdated={setCurrentUser}
+          />
+        );
       default:
         return (
           <DashboardPage

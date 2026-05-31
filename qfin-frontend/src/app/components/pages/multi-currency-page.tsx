@@ -71,13 +71,28 @@ export function MultiCurrencyPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const rate = exchangeRates.find(r => r.currency === formData.currency)?.rate || 1;
+      const amountNumber = Number(formData.amount);
+      let rate = 1;
+      let convertedAmount = amountNumber;
+
+      if (formData.currency !== 'BRL') {
+        const conversion = await api.convertCurrency(formData.currency, 'BRL', amountNumber);
+        rate = conversion.rate;
+        convertedAmount = conversion.convertedAmount;
+      }
+
       const payload = {
-        description: formData.description, amount: Number(formData.amount),
-        currency: formData.currency, convertedAmount: Number(formData.amount) * rate,
-        baseCurrency: 'BRL', exchangeRate: rate,
-        type: formData.type.toUpperCase(), category: formData.category, date: formData.date,
+        description: formData.description,
+        amount: amountNumber,
+        currency: formData.currency,
+        convertedAmount,
+        baseCurrency: 'BRL',
+        exchangeRate: rate,
+        type: formData.type.toUpperCase(),
+        category: formData.category,
+        date: formData.date,
       };
+
       const created = await api.createMultiCurrencyTransaction(payload);
       setTransactions(prev => [{
         id: created.id.toString(), description: created.description, amount: created.amount,
@@ -88,6 +103,7 @@ export function MultiCurrencyPage() {
       }, ...prev]);
       setFormData({ description: '', amount: '', currency: 'USD', type: 'expense', category: '', date: '' });
       setShowForm(false);
+      await loadData();
     } catch (error) { console.error('Error creating transaction:', error); }
   };
 

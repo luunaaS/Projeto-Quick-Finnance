@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Calendar, TrendingUp, TrendingDown, PieChart, BarChart3, Download } from 'lucide-react';
+import { Calendar, TrendingUp, TrendingDown, PieChart, Download } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import api from '../../../services/api';
 // Charts will be rendered using simple HTML/CSS instead of external libraries
 
 interface Transaction {
@@ -33,6 +34,7 @@ export function ReportsPage({ transactions, financings }: ReportsPageProps) {
   const [selectedPeriod, setSelectedPeriod] = useState('6m');
   const [selectedChart, setSelectedChart] = useState('monthly');
   const [chartsReady, setChartsReady] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     // Add a small delay to ensure charts load properly
@@ -189,6 +191,38 @@ export function ReportsPage({ transactions, financings }: ReportsPageProps) {
       savingsRate: totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome) * 100 : 0
     };
   }, [filteredTransactions, monthlyData, financings]);
+
+  const handleExport = async (format: 'csv' | 'pdf') => {
+    try {
+      setIsExporting(true);
+      const now = new Date();
+      const endDate = now.toISOString().slice(0, 10);
+      const startDateObj = new Date(now);
+      if (selectedPeriod === '1m') startDateObj.setMonth(now.getMonth() - 1);
+      else if (selectedPeriod === '3m') startDateObj.setMonth(now.getMonth() - 3);
+      else if (selectedPeriod === '6m') startDateObj.setMonth(now.getMonth() - 6);
+      else startDateObj.setFullYear(now.getFullYear() - 1);
+      const startDate = startDateObj.toISOString().slice(0, 10);
+
+      const blob = format === 'csv'
+        ? await api.exportTransactionsCSV(startDate, endDate)
+        : await api.exportReportPDF(startDate, endDate);
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = format === 'csv' ? `relatorio-${startDate}-${endDate}.csv` : `relatorio-${startDate}-${endDate}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Erro ao exportar relatório:', error);
+      alert('Erro ao exportar relatório. Verifique os dados e tente novamente.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const renderChart = () => {
     if (!chartsReady) {
@@ -453,9 +487,20 @@ export function ReportsPage({ transactions, financings }: ReportsPageProps) {
           <Button 
             variant="outline"
             style={{ borderColor: '#1E3A8A', color: '#1E3A8A' }}
+            onClick={() => handleExport('csv')}
+            disabled={isExporting}
           >
             <Download className="h-4 w-4 mr-2" />
-            Exportar
+            {isExporting ? 'Exportando...' : 'Exportar CSV'}
+          </Button>
+          <Button 
+            variant="outline"
+            style={{ borderColor: '#1E3A8A', color: '#1E3A8A' }}
+            onClick={() => handleExport('pdf')}
+            disabled={isExporting}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            {isExporting ? 'Exportando...' : 'Exportar PDF'}
           </Button>
         </div>
       </div>
