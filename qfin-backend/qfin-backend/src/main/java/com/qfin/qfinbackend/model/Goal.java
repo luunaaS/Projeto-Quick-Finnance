@@ -1,6 +1,7 @@
 package com.qfin.qfinbackend.model;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDate;
 
 @Entity
@@ -33,6 +34,7 @@ public class Goal {
     @Column(nullable = false)
     private GoalStatus status = GoalStatus.IN_PROGRESS;
     
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;

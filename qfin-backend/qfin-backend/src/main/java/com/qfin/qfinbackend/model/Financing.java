@@ -1,6 +1,7 @@
 package com.qfin.qfinbackend.model;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -30,23 +31,16 @@ public class Financing {
     @DecimalMin(value = "0.01", message = "Monthly payment must be greater than 0")
     private Double monthlyPayment;
     
-    @NotNull(message = "Type cannot be null")
-    @Enumerated(EnumType.STRING)
-    private FinancingType type; // LOAN, MORTGAGE, CAR_FINANCING, etc.
+    @NotBlank(message = "Type cannot be empty")
+    private String type;
     
     @NotNull(message = "End date cannot be null")
     private LocalDate endDate;
     
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
     
-    public enum FinancingType {
-        LOAN,
-        MORTGAGE,
-        CAR_FINANCING,
-        PERSONAL_LOAN,
-        STUDENT_LOAN,
-        OTHER
-    }
+
 }
