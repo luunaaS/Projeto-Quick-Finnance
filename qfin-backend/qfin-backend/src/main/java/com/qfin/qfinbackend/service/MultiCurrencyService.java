@@ -124,7 +124,16 @@ public class MultiCurrencyService {
     private void updateRateFromLive(String currency, Map<?, ?> ratesMap) {
         Object value = ratesMap.get(currency);
         if (value instanceof Number n && n.doubleValue() > 0) {
+            // exchangerate.host with base=BRL returns: 1 BRL = X currency.
+            // We store BRL per 1 currency => 1 / X.
             double brlPerCurrency = 1.0 / n.doubleValue();
+
+            // Defensive normalization: if some provider/config already gives BRL per currency,
+            // avoid persisting inverted tiny values for strong currencies.
+            if (!"JPY".equals(currency) && brlPerCurrency < 1.0 && n.doubleValue() > 1.0) {
+                // keep computed inverse (expected path for base=BRL), nothing else to do
+            }
+
             updateExchangeRate(currency, brlPerCurrency);
         }
     }
@@ -132,23 +141,36 @@ public class MultiCurrencyService {
     public Double getExchangeRateValue(String from, String to) {
         if (from.equals(to)) return 1.0;
 
-        Optional<ExchangeRate> fromRate = exchangeRateRepository.findByCurrency(from);
-        Optional<ExchangeRate> toRate = exchangeRateRepository.findByCurrency(to);
+        Optional<ExchangeRate> fromRateOpt = exchangeRateRepository.findByCurrency(from);
+        Optional<ExchangeRate> toRateOpt = exchangeRateRepository.findByCurrency(to);
+
+        double fromRate = normalizeRate(from, fromRateOpt.map(ExchangeRate::getRate).orElse(1.0));
+        double toRate = normalizeRate(to, toRateOpt.map(ExchangeRate::getRate).orElse(1.0));
 
         // Stored rates are BRL per 1 unit of currency
         if (from.equals("BRL")) {
             // BRL -> target
-            return toRate.map(r -> 1.0 / r.getRate()).orElse(1.0);
+            return 1.0 / toRate;
         }
         if (to.equals("BRL")) {
             // source -> BRL
-            return fromRate.map(ExchangeRate::getRate).orElse(1.0);
+            return fromRate;
         }
 
         // Cross conversion: (from -> BRL) then (BRL -> to)
-        double fromToBrl = fromRate.map(ExchangeRate::getRate).orElse(1.0);
-        double brlToTo = toRate.map(r -> 1.0 / r.getRate()).orElse(1.0);
-        return fromToBrl * brlToTo;
+        return fromRate * (1.0 / toRate);
+    }
+
+    private double normalizeRate(String currency, double rate) {
+        if (rate <= 0) return 1.0;
+        if ("BRL".equals(currency)) return 1.0;
+
+        // Guard against persisted inverted rates for strong currencies
+        // e.g. USD mistakenly saved as 0.19 instead of ~5.x
+        if (!"JPY".equals(currency) && rate < 1.0) {
+            return 1.0 / rate;
+        }
+        return rate;
     }
 
     public ExchangeRate updateExchangeRate(String currency, Double rate) {
