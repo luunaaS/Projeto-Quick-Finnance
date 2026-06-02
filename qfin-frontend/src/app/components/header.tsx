@@ -4,9 +4,13 @@ import { Button } from "./ui/simple-button";
 interface HeaderProps {
   currentPage: string;
   onNavigate: (page: string) => void;
+  currentUser?: {
+    name?: string;
+    profileImageBase64?: string | null;
+  };
 }
 
-export function Header({ currentPage, onNavigate }: HeaderProps) {
+export function Header({ currentPage, onNavigate, currentUser }: HeaderProps) {
   return (
     <header className="border-b bg-white shadow-sm" style={{ borderColor: '#6B7280' }}>
       <div className="flex h-16 items-center justify-between px-6">
@@ -103,14 +107,29 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
           </Button>
         </nav>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <button
             onClick={() => onNavigate('profile')}
-            className="h-8 w-8 rounded-full flex items-center justify-center hover:opacity-90 transition-opacity"
-            style={{ backgroundColor: '#1E3A8A', color: 'white' }}
+            className="flex items-center gap-2 rounded-full px-2 py-1 hover:bg-blue-50 transition-colors"
             title="Perfil do usuário"
           >
-            <User className="h-4 w-4" />
+            <span className="text-sm font-medium max-w-[140px] truncate" style={{ color: '#1E3A8A' }}>
+              {currentUser?.name || 'Usuário'}
+            </span>
+            <span
+              className="h-8 w-8 rounded-full flex items-center justify-center overflow-hidden"
+              style={{ backgroundColor: '#1E3A8A', color: 'white' }}
+            >
+              {currentUser?.profileImageBase64 ? (
+                <img
+                  src={currentUser.profileImageBase64}
+                  alt={currentUser?.name || 'Usuário'}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <User className="h-4 w-4" />
+              )}
+            </span>
           </button>
         </div>
       </div>

@@ -422,7 +422,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header currentPage={currentPage} onNavigate={setCurrentPage} />
+      <Header currentPage={currentPage} onNavigate={setCurrentPage} currentUser={currentUser} />
       <main className="container mx-auto px-6 py-8">
         {renderCurrentPage()}
       </main>

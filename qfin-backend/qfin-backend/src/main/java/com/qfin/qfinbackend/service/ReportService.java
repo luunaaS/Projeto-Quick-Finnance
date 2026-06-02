@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -154,37 +155,52 @@ public class ReportService {
     }
 
     public byte[] exportReportToPDF(Long userId, ReportRequestDTO request) throws IOException {
-        // Simplified PDF generation - returns a basic text representation
-        // For full PDF support, you would use iText library
         ReportSummaryDTO summary = getReportSummary(userId, request);
         List<Transaction> transactions = getTransactionsByFilters(userId, request);
-        
-        StringBuilder pdfContent = new StringBuilder();
-        pdfContent.append("RELATÓRIO FINANCEIRO\n\n");
-        pdfContent.append("Período: ").append(request.getStartDate()).append(" a ").append(request.getEndDate()).append("\n\n");
-        pdfContent.append("RESUMO\n");
-        pdfContent.append("Total de Receitas: R$ ").append(String.format("%.2f", summary.getTotalIncome())).append("\n");
-        pdfContent.append("Total de Despesas: R$ ").append(String.format("%.2f", summary.getTotalExpense())).append("\n");
-        pdfContent.append("Saldo: R$ ").append(String.format("%.2f", summary.getBalance())).append("\n");
-        pdfContent.append("Total de Transações: ").append(summary.getTotalTransactions()).append("\n\n");
-        
-        pdfContent.append("DETALHAMENTO POR CATEGORIA\n");
-        for (CategorySummaryDTO category : summary.getCategoryBreakdown()) {
-            pdfContent.append(category.getCategory()).append(" (").append(category.getType()).append("): R$ ")
-                .append(String.format("%.2f", category.getTotalAmount()))
-                .append(" (").append(category.getTransactionCount()).append(" transações)\n");
-        }
-        
-        pdfContent.append("\n\nTRANSAÇÕES DETALHADAS\n");
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        com.itextpdf.kernel.pdf.PdfWriter writer = new com.itextpdf.kernel.pdf.PdfWriter(out);
+        com.itextpdf.kernel.pdf.PdfDocument pdf = new com.itextpdf.kernel.pdf.PdfDocument(writer);
+        com.itextpdf.layout.Document document = new com.itextpdf.layout.Document(pdf);
+
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        for (Transaction transaction : transactions) {
-            pdfContent.append(transaction.getDate().format(formatter)).append(" - ")
-                .append(transaction.getType()).append(" - ")
-                .append(transaction.getCategory()).append(" - ")
-                .append(transaction.getDescription()).append(" - R$ ")
-                .append(String.format("%.2f", transaction.getAmount())).append("\n");
+
+        document.add(new com.itextpdf.layout.element.Paragraph("RELATÓRIO FINANCEIRO").setBold().setFontSize(16));
+        document.add(new com.itextpdf.layout.element.Paragraph(" "));
+        document.add(new com.itextpdf.layout.element.Paragraph(
+                "Período: " + request.getStartDate() + " a " + request.getEndDate()));
+        document.add(new com.itextpdf.layout.element.Paragraph(" "));
+
+        document.add(new com.itextpdf.layout.element.Paragraph("RESUMO").setBold());
+        document.add(new com.itextpdf.layout.element.Paragraph("Total de Receitas: R$ " + String.format("%.2f", summary.getTotalIncome())));
+        document.add(new com.itextpdf.layout.element.Paragraph("Total de Despesas: R$ " + String.format("%.2f", summary.getTotalExpense())));
+        document.add(new com.itextpdf.layout.element.Paragraph("Saldo: R$ " + String.format("%.2f", summary.getBalance())));
+        document.add(new com.itextpdf.layout.element.Paragraph("Total de Transações: " + summary.getTotalTransactions()));
+        document.add(new com.itextpdf.layout.element.Paragraph(" "));
+
+        document.add(new com.itextpdf.layout.element.Paragraph("DETALHAMENTO POR CATEGORIA").setBold());
+        for (CategorySummaryDTO category : summary.getCategoryBreakdown()) {
+            document.add(new com.itextpdf.layout.element.Paragraph(
+                    category.getCategory() + " (" + category.getType() + "): R$ "
+                            + String.format("%.2f", category.getTotalAmount())
+                            + " (" + category.getTransactionCount() + " transações)"
+            ));
         }
-        
-        return pdfContent.toString().getBytes();
+
+        document.add(new com.itextpdf.layout.element.Paragraph(" "));
+        document.add(new com.itextpdf.layout.element.Paragraph("TRANSAÇÕES DETALHADAS").setBold());
+        for (Transaction transaction : transactions) {
+            document.add(new com.itextpdf.layout.element.Paragraph(
+                    transaction.getDate().format(formatter) + " - "
+                            + transaction.getType() + " - "
+                            + transaction.getCategory() + " - "
+                            + transaction.getDescription() + " - R$ "
+                            + String.format("%.2f", transaction.getAmount())
+            ));
+        }
+
+        document.close();
+        return out.toByteArray();
     }
 }
