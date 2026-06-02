@@ -319,14 +319,14 @@ class ApiService {
   }
 
   // Reports
-  async getReportSummary(startDate: string, endDate: string): Promise<any> {
+  async getReportSummary(startDate: string, endDate: string, filters?: { periodType?: 'day' | 'month' | 'year'; category?: string }): Promise<any> {
     return this.request('/reports/summary', {
       method: 'POST',
-      body: JSON.stringify({ startDate, endDate }),
+      body: JSON.stringify({ startDate, endDate, ...filters }),
     });
   }
 
-  async exportTransactionsCSV(startDate: string, endDate: string): Promise<Blob> {
+  async exportTransactionsCSV(startDate: string, endDate: string, filters?: { periodType?: 'day' | 'month' | 'year'; category?: string }): Promise<Blob> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
@@ -336,7 +336,7 @@ class ApiService {
     const response = await fetch(`${API_BASE_URL}/reports/export/transactions/csv`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ startDate, endDate }),
+      body: JSON.stringify({ startDate, endDate, ...filters }),
     });
     if (!response.ok) {
       throw new Error(`Erro ao exportar CSV (${response.status})`);
@@ -344,7 +344,7 @@ class ApiService {
     return response.blob();
   }
 
-  async exportReportPDF(startDate: string, endDate: string): Promise<Blob> {
+  async exportReportPDF(startDate: string, endDate: string, filters?: { periodType?: 'day' | 'month' | 'year'; category?: string }): Promise<Blob> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
@@ -354,7 +354,7 @@ class ApiService {
     const response = await fetch(`${API_BASE_URL}/reports/export/pdf`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ startDate, endDate }),
+      body: JSON.stringify({ startDate, endDate, ...filters }),
     });
     if (!response.ok) {
       throw new Error(`Erro ao exportar PDF (${response.status})`);

@@ -1,4 +1,4 @@
-import { DollarSign, Menu, User, HelpCircle, Bell, TrendingUp, Repeat, Globe } from "lucide-react";
+import { DollarSign, Menu, User, HelpCircle, TrendingUp, Repeat, Globe } from "lucide-react";
 import { Button } from "./ui/simple-button";
 
 interface HeaderProps {
@@ -14,17 +14,22 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
           <Button variant="ghost" size="icon" className="md:hidden">
             <Menu className="h-5 w-5" />
           </Button>
-          <div className="flex items-center gap-2">
+          <button
+            onClick={() => onNavigate('dashboard')}
+            className="flex items-center gap-2 rounded-md px-1 py-1 hover:bg-blue-50 transition-colors"
+            title="Ir para o Dashboard"
+            aria-label="Ir para o Dashboard"
+          >
             <div 
               className="flex h-8 w-8 items-center justify-center rounded-lg"
               style={{ backgroundColor: '#1E3A8A' }}
             >
               <DollarSign className="h-5 w-5 text-white" />
             </div>
-            <h1 className="text-xl font-bold" style={{ color: '#1E3A8A' }}>
+            <h1 className="text-lg md:text-xl font-bold" style={{ color: '#1E3A8A' }}>
               QFin
             </h1>
-          </div>
+          </button>
         </div>
         
         <nav className="hidden md:flex items-center gap-6">
@@ -78,15 +83,6 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
             onClick={() => onNavigate('financing')}
           >
             Financiamentos
-          </Button>
-          <Button 
-            variant="ghost"
-            className="hover:bg-blue-50 flex items-center gap-2"
-            style={{ color: currentPage === 'notifications' ? '#1E3A8A' : '#6B7280' }}
-            onClick={() => onNavigate('notifications')}
-          >
-            <Bell className="h-4 w-4" />
-            Notificações
           </Button>
           <Button 
             variant="ghost"

@@ -5,7 +5,6 @@ import { TransactionsPage } from './components/pages/transactions-page';
 import { FinancingPage } from './components/pages/financing-page';
 import { ReportsPage } from './components/pages/reports-page';
 import { HelpPage } from './components/help-page';
-import { NotificationsPage } from './components/pages/notifications-page';
 import { InvestmentsPage } from './components/pages/investments-page';
 import { RecurringTransactionsPage } from './components/pages/recurring-transactions-page';
 import { MultiCurrencyPage } from './components/pages/multi-currency-page';
@@ -78,10 +77,11 @@ export default function App() {
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const [transactionsData, financingsData, recurringData] = await Promise.all([
+      const [transactionsData, financingsData, recurringData, multiCurrencyData] = await Promise.all([
         api.getTransactions(),
         api.getFinancings(),
         api.getRecurringTransactions(),
+        api.getMultiCurrencyTransactions(),
       ]);
 
       const mappedTransactions = transactionsData.map((t: any) => ({
@@ -104,7 +104,16 @@ export default function App() {
           date: r.nextProcessing || new Date().toISOString().slice(0, 10),
         }));
 
-      setTransactions([...recurringSynthetic, ...mappedTransactions]);
+      const multiCurrencySynthetic = (multiCurrencyData || []).map((m: any) => ({
+        id: `multi-${m.id}`,
+        type: (m.type || '').toLowerCase() as 'income' | 'expense',
+        amount: Number(m.convertedAmount ?? m.amount) || 0,
+        category: m.category || 'Multi-moeda',
+        description: `${m.description || 'Transação'} (${m.currency || 'FX'}→BRL)`,
+        date: m.date || new Date().toISOString().slice(0, 10),
+      }));
+
+      setTransactions([...multiCurrencySynthetic, ...recurringSynthetic, ...mappedTransactions]);
 
       setFinancings(financingsData.map((f: any) => ({
         id: f.id.toString(),
@@ -385,8 +394,6 @@ export default function App() {
         );
       case 'help':
         return <HelpPage />;
-      case 'notifications':
-        return <NotificationsPage />;
       case 'investments':
         return <InvestmentsPage />;
       case 'recurring':

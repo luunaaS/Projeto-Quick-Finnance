@@ -74,10 +74,11 @@ export function HelpPage() {
               <div className="bg-white p-4 rounded-lg border border-gray-200">
                 <h4 className="font-semibold mb-2 text-[#1E3A8A]">Principais recursos:</h4>
                 <ul className="list-disc list-inside space-y-1 text-[#6B7280]">
-                  <li>Dashboard com visão geral de suas finanças</li>
+                  <li>Dashboard com visão geral de suas finanças (incluindo recorrentes e multi-moeda em BRL)</li>
                   <li>Registro de transações (receitas e despesas)</li>
                   <li>Gerenciamento de financiamentos</li>
-                  <li>Relatórios e gráficos financeiros</li>
+                  <li>Relatórios e gráficos financeiros com filtros e exportações</li>
+                  <li>Configurações de notificações centralizadas no Perfil</li>
                 </ul>
               </div>
             </div>
@@ -166,7 +167,7 @@ export function HelpPage() {
                   <div>
                     <div className="font-semibold text-sm mb-1">🔄 Transações Recentes</div>
                     <p className="text-sm text-[#6B7280]">
-                      Lista das últimas transações registradas, com informações de tipo, valor, categoria e data.
+                      Lista das últimas transações registradas, incluindo transações recorrentes ativas e multi-moeda convertidas para BRL.
                     </p>
                   </div>
                   
@@ -182,7 +183,7 @@ export function HelpPage() {
               <div className="bg-[#EFF6FF] p-4 rounded-lg border border-[#1E3A8A]/20">
                 <div className="font-semibold text-[#1E3A8A] mb-2">💡 Dica:</div>
                 <p className="text-sm text-[#6B7280]">
-                  Acesse o Dashboard diariamente para ter uma visão rápida de sua saúde financeira!
+                  Use o ícone de cifrão (QFin) no topo para voltar rapidamente ao Dashboard de qualquer tela.
                 </p>
               </div>
             </div>
@@ -331,11 +332,11 @@ export function HelpPage() {
                 <h4 className="font-semibold mb-3 text-[#1E3A8A]">Como usar os relatórios:</h4>
                 
                 <ol className="list-decimal list-inside space-y-2 text-sm text-[#6B7280]">
-                  <li>Use os filtros de período para analisar meses ou anos específicos</li>
+                  <li>Use os filtros de período para analisar 1, 3, 6 meses ou 1 ano</li>
+                  <li>Defina a granularidade por dia, mês ou ano para ajustar o nível de detalhe</li>
+                  <li>Use filtro por categoria para focar em grupos específicos de gastos/receitas</li>
                   <li>Compare diferentes períodos para identificar melhorias</li>
-                  <li>Identifique categorias com gastos excessivos</li>
-                  <li>Estabeleça metas baseadas nos dados históricos</li>
-                  <li>Exporte os relatórios (quando disponível) para análises externas</li>
+                  <li>Exporte os relatórios em CSV e PDF com os filtros atualmente selecionados</li>
                 </ol>
               </div>
             </div>
@@ -364,6 +365,7 @@ export function HelpPage() {
               </ul>
               <p className="text-sm">
                 Os valores são atualizados automaticamente sempre que você adiciona, edita ou remove uma transação.
+                O Dashboard também considera transações recorrentes ativas e transações multi-moeda convertidas para BRL.
               </p>
             </div>
           </AccordionItem>
@@ -489,11 +491,11 @@ export function HelpPage() {
         <h2 className="mb-4">🎯 Dicas para aproveitar melhor o QFin</h2>
         <ul className="space-y-2 text-sm">
           <li>✅ Registre todas as transações imediatamente para não esquecer</li>
-          <li>✅ Revise seus dados semanalmente no Dashboard</li>
+          <li>✅ Revise seus dados semanalmente no Dashboard (incluindo recorrentes e multi-moeda em BRL)</li>
           <li>✅ Use categorias consistentes para facilitar análises</li>
-          <li>✅ Analise os relatórios mensalmente para ajustar seu planejamento</li>
-          <li>✅ Mantenha os financiamentos atualizados após cada pagamento</li>
-          <li>✅ Estabeleça metas financeiras baseadas nos dados históricos</li>
+          <li>✅ Aplique filtros de granularidade e categoria nos relatórios antes de exportar CSV/PDF</li>
+          <li>✅ Ajuste notificações na seção de Perfil para manter alertas relevantes</li>
+          <li>✅ Use o ícone de cifrão no topo para voltar rapidamente ao Dashboard</li>
         </ul>
       </div>
 

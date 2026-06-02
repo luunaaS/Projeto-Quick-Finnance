@@ -33,6 +33,8 @@ interface ReportsPageProps {
 export function ReportsPage({ transactions, financings }: ReportsPageProps) {
   const [selectedPeriod, setSelectedPeriod] = useState('6m');
   const [selectedChart, setSelectedChart] = useState('monthly');
+  const [periodType, setPeriodType] = useState<'day' | 'month' | 'year'>('month');
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [chartsReady, setChartsReady] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -70,25 +72,47 @@ export function ReportsPage({ transactions, financings }: ReportsPageProps) {
     return transactions.filter(t => new Date(t.date) >= periodStart);
   }, [transactions, selectedPeriod]);
 
+  const availableCategories = useMemo(() => {
+    const categories = Array.from(new Set(transactions.map(t => t.category).filter(Boolean)));
+    return categories.sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [transactions]);
+
+  const categoryFilteredTransactions = useMemo(() => {
+    if (selectedCategory === 'all') return filteredTransactions;
+    return filteredTransactions.filter(t => t.category === selectedCategory);
+  }, [filteredTransactions, selectedCategory]);
+
   // Dados para gráfico mensal
   const monthlyData = useMemo(() => {
     const monthsMap = new Map();
     
-    filteredTransactions.forEach(transaction => {
+    categoryFilteredTransactions.forEach(transaction => {
       const date = new Date(transaction.date);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const monthName = date.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
+      let periodKey = '';
+      let periodLabel = '';
+
+      if (periodType === 'day') {
+        periodKey = date.toISOString().slice(0, 10);
+        periodLabel = date.toLocaleDateString('pt-BR');
+      } else if (periodType === 'year') {
+        periodKey = String(date.getFullYear());
+        periodLabel = String(date.getFullYear());
+      } else {
+        periodKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        periodLabel = date.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
+      }
       
-      if (!monthsMap.has(monthKey)) {
-        monthsMap.set(monthKey, {
-          month: monthName,
+      if (!monthsMap.has(periodKey)) {
+        monthsMap.set(periodKey, {
+          period: periodLabel,
+          sortKey: periodKey,
           receitas: 0,
           despesas: 0,
           saldo: 0
         });
       }
       
-      const monthData = monthsMap.get(monthKey);
+      const monthData = monthsMap.get(periodKey);
       if (transaction.type === 'income') {
         monthData.receitas += transaction.amount;
       } else {
@@ -97,14 +121,14 @@ export function ReportsPage({ transactions, financings }: ReportsPageProps) {
       monthData.saldo = monthData.receitas - monthData.despesas;
     });
 
-    return Array.from(monthsMap.values()).sort((a, b) => a.month.localeCompare(b.month));
-  }, [filteredTransactions]);
+    return Array.from(monthsMap.values()).sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+  }, [categoryFilteredTransactions, periodType]);
 
   // Dados para gráfico de categorias (receitas)
   const categoryIncomeData = useMemo(() => {
     const categoryMap = new Map();
     
-    filteredTransactions
+    categoryFilteredTransactions
       .filter(t => t.type === 'income')
       .forEach(transaction => {
         const current = categoryMap.get(transaction.category) || 0;
@@ -116,13 +140,13 @@ export function ReportsPage({ transactions, financings }: ReportsPageProps) {
       value,
       fill: '#059669'
     }));
-  }, [filteredTransactions]);
+  }, [categoryFilteredTransactions]);
 
   // Dados para gráfico de categorias (despesas)
   const categoryExpenseData = useMemo(() => {
     const categoryMap = new Map();
     
-    filteredTransactions
+    categoryFilteredTransactions
       .filter(t => t.type === 'expense')
       .forEach(transaction => {
         const current = categoryMap.get(transaction.category) || 0;
@@ -136,7 +160,7 @@ export function ReportsPage({ transactions, financings }: ReportsPageProps) {
       value,
       fill: colors[index % colors.length]
     }));
-  }, [filteredTransactions]);
+  }, [categoryFilteredTransactions]);
 
   // Dados de evolução patrimonial
   const evolutionData = useMemo(() => {
@@ -144,7 +168,7 @@ export function ReportsPage({ transactions, financings }: ReportsPageProps) {
     let cumulativeBalance = 0;
 
     // Ordenar transações por data
-    const sortedTransactions = [...filteredTransactions].sort((a, b) => 
+    const sortedTransactions = [...categoryFilteredTransactions].sort((a, b) => 
       new Date(a.date).getTime() - new Date(b.date).getTime()
     );
 
@@ -164,15 +188,15 @@ export function ReportsPage({ transactions, financings }: ReportsPageProps) {
       date: new Date(date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
       patrimonio: balance
     }));
-  }, [filteredTransactions]);
+  }, [categoryFilteredTransactions]);
 
   // Estatísticas gerais
   const stats = useMemo(() => {
-    const totalIncome = filteredTransactions
+    const totalIncome = categoryFilteredTransactions
       .filter(t => t.type === 'income')
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const totalExpenses = filteredTransactions
+    const totalExpenses = categoryFilteredTransactions
       .filter(t => t.type === 'expense')
       .reduce((sum, t) => sum + t.amount, 0);
 
@@ -190,7 +214,7 @@ export function ReportsPage({ transactions, financings }: ReportsPageProps) {
       totalFinancingPayments,
       savingsRate: totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome) * 100 : 0
     };
-  }, [filteredTransactions, monthlyData, financings]);
+  }, [categoryFilteredTransactions, monthlyData, financings]);
 
   const handleExport = async (format: 'csv' | 'pdf') => {
     try {
@@ -204,9 +228,14 @@ export function ReportsPage({ transactions, financings }: ReportsPageProps) {
       else startDateObj.setFullYear(now.getFullYear() - 1);
       const startDate = startDateObj.toISOString().slice(0, 10);
 
+      const filters = {
+        periodType,
+        category: selectedCategory !== 'all' ? selectedCategory : undefined,
+      };
+
       const blob = format === 'csv'
-        ? await api.exportTransactionsCSV(startDate, endDate)
-        : await api.exportReportPDF(startDate, endDate);
+        ? await api.exportTransactionsCSV(startDate, endDate, filters)
+        : await api.exportReportPDF(startDate, endDate, filters);
 
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -242,10 +271,10 @@ export function ReportsPage({ transactions, financings }: ReportsPageProps) {
             {monthlyData.map((month) => {
               const maxValue = Math.max(month.receitas, month.despesas, 1);
               return (
-                <div key={month.month} className="space-y-3">
+                <div key={month.period} className="space-y-3">
                   <div className="flex justify-between items-center">
                     <h4 className="text-lg font-semibold" style={{ color: '#1E3A8A' }}>
-                      {month.month}
+                      {month.period}
                     </h4>
                     <div className="text-sm" style={{ color: '#6B7280' }}>
                       Saldo: <span 
@@ -482,6 +511,29 @@ export function ReportsPage({ transactions, financings }: ReportsPageProps) {
               <SelectItem value="3m">3 Meses</SelectItem>
               <SelectItem value="6m">6 Meses</SelectItem>
               <SelectItem value="1y">1 Ano</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={periodType} onValueChange={(value) => setPeriodType(value as 'day' | 'month' | 'year')}>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="day">Dia</SelectItem>
+              <SelectItem value="month">Mês</SelectItem>
+              <SelectItem value="year">Ano</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Categoria" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas categorias</SelectItem>
+              {availableCategories.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Button 

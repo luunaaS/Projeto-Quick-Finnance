@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { User, Lock, Camera, Trash2 } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { User, Lock, Camera, Trash2, Bell } from 'lucide-react';
 import { Card } from '../ui/simple-card';
 import { Button } from '../ui/simple-button';
 import api from '../../../services/api';
@@ -38,6 +38,19 @@ export function ProfilePage({ currentUser, onUserUpdated }: ProfilePageProps) {
   const [passwordError, setPasswordError] = useState('');
   const [photoMessage, setPhotoMessage] = useState('');
   const [photoError, setPhotoError] = useState('');
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [photoLoading, setPhotoLoading] = useState(false);
+  const [notificationSettings, setNotificationSettings] = useState({
+    emailNotifications: true,
+    pushNotifications: true,
+    recurringTransactionReminders: true,
+    financingPaymentReminders: true,
+    goalProgressUpdates: true,
+  });
+  const [notificationLoading, setNotificationLoading] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState('');
+  const [notificationError, setNotificationError] = useState('');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -68,16 +81,74 @@ export function ProfilePage({ currentUser, onUserUpdated }: ProfilePageProps) {
     }
   };
 
+  const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const validatePhone = (phone: string) => !phone || /^[0-9()+\-\s]{8,20}$/.test(phone);
+  const validateBirthDate = (birthDate: string) => {
+    if (!birthDate) return true;
+    const date = new Date(`${birthDate}T00:00:00`);
+    const now = new Date();
+    return !Number.isNaN(date.getTime()) && date <= now;
+  };
+
+  const profileIsDirty = useMemo(
+    () =>
+      profileForm.name !== (currentUser.name || '') ||
+      profileForm.email !== (currentUser.email || '') ||
+      profileForm.phone !== (currentUser.phone || '') ||
+      profileForm.bio !== (currentUser.bio || '') ||
+      profileForm.birthDate !== (currentUser.birthDate || ''),
+    [profileForm, currentUser]
+  );
+
+  const handleResetProfileForm = () => {
+    setProfileForm({
+      name: currentUser.name || '',
+      email: currentUser.email || '',
+      phone: currentUser.phone || '',
+      bio: currentUser.bio || '',
+      birthDate: currentUser.birthDate || '',
+    });
+    setProfileError('');
+    setProfileMessage('');
+  };
+
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setProfileError('');
     setProfileMessage('');
+
+    if (!profileForm.name.trim()) {
+      setProfileError('Nome é obrigatório.');
+      return;
+    }
+
+    if (!validateEmail(profileForm.email)) {
+      setProfileError('Informe um email válido.');
+      return;
+    }
+
+    if (!validatePhone(profileForm.phone)) {
+      setProfileError('Telefone inválido. Use apenas números e símbolos comuns.');
+      return;
+    }
+
+    if (!validateBirthDate(profileForm.birthDate)) {
+      setProfileError('Data de nascimento inválida.');
+      return;
+    }
+
+    if (profileForm.bio.length > 280) {
+      setProfileError('A bio deve ter no máximo 280 caracteres.');
+      return;
+    }
+
+    setProfileLoading(true);
     try {
       const res = await api.updateProfileDetails({
-        name: profileForm.name,
-        email: profileForm.email,
-        phone: profileForm.phone || undefined,
-        bio: profileForm.bio || undefined,
+        name: profileForm.name.trim(),
+        email: profileForm.email.trim(),
+        phone: profileForm.phone.trim() || undefined,
+        bio: profileForm.bio.trim() || undefined,
         birthDate: profileForm.birthDate || undefined,
       });
       onUserUpdated({
@@ -91,6 +162,8 @@ export function ProfilePage({ currentUser, onUserUpdated }: ProfilePageProps) {
       setProfileMessage('Perfil atualizado com sucesso.');
     } catch (error: any) {
       setProfileError(error?.message || 'Erro ao atualizar perfil.');
+    } finally {
+      setProfileLoading(false);
     }
   };
 
@@ -104,12 +177,20 @@ export function ProfilePage({ currentUser, onUserUpdated }: ProfilePageProps) {
       return;
     }
 
+    if (passwordForm.newPassword.length < 6) {
+      setPasswordError('A nova senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
+
+    setPasswordLoading(true);
     try {
       await api.changePassword(passwordForm.currentPassword, passwordForm.newPassword);
       setPasswordMessage('Senha alterada com sucesso.');
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (error: any) {
       setPasswordError(error?.message || 'Erro ao alterar senha.');
+    } finally {
+      setPasswordLoading(false);
     }
   };
 
@@ -133,6 +214,13 @@ export function ProfilePage({ currentUser, onUserUpdated }: ProfilePageProps) {
       return;
     }
 
+    const maxSizeMb = 5;
+    if (file.size > maxSizeMb * 1024 * 1024) {
+      setPhotoError(`A imagem deve ter no máximo ${maxSizeMb}MB.`);
+      return;
+    }
+
+    setPhotoLoading(true);
     try {
       const base64 = await readFileAsBase64(file);
       const res = await api.updateProfilePhoto(base64);
@@ -149,12 +237,21 @@ export function ProfilePage({ currentUser, onUserUpdated }: ProfilePageProps) {
       setPhotoMessage('Foto de perfil atualizada com sucesso.');
     } catch (error: any) {
       setPhotoError(error?.message || 'Erro ao atualizar foto de perfil.');
+    } finally {
+      setPhotoLoading(false);
+      event.target.value = '';
     }
   };
 
   const handleDeletePhoto = async () => {
+    if (!profileImage) return;
+
+    const confirmed = window.confirm('Tem certeza que deseja excluir sua foto de perfil?');
+    if (!confirmed) return;
+
     setPhotoError('');
     setPhotoMessage('');
+    setPhotoLoading(true);
     try {
       const res = await api.deleteProfilePhoto();
       const updated = res.user;
@@ -170,11 +267,44 @@ export function ProfilePage({ currentUser, onUserUpdated }: ProfilePageProps) {
       setPhotoMessage('Foto de perfil removida com sucesso.');
     } catch (error: any) {
       setPhotoError(error?.message || 'Erro ao remover foto de perfil.');
+    } finally {
+      setPhotoLoading(false);
+    }
+  };
+
+  const loadNotificationSettings = async () => {
+    try {
+      const data = await api.getNotificationSettings();
+      setNotificationSettings({
+        emailNotifications: Boolean(data?.emailNotifications),
+        pushNotifications: Boolean(data?.pushNotifications),
+        recurringTransactionReminders: Boolean(data?.recurringTransactionReminders),
+        financingPaymentReminders: Boolean(data?.financingPaymentReminders),
+        goalProgressUpdates: Boolean(data?.goalProgressUpdates),
+      });
+    } catch (error: any) {
+      setNotificationError(error?.message || 'Erro ao carregar configurações de notificação.');
+    }
+  };
+
+  const handleNotificationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setNotificationError('');
+    setNotificationMessage('');
+    setNotificationLoading(true);
+    try {
+      await api.updateNotificationSettings(notificationSettings);
+      setNotificationMessage('Configurações de notificação atualizadas com sucesso.');
+    } catch (error: any) {
+      setNotificationError(error?.message || 'Erro ao atualizar configurações de notificação.');
+    } finally {
+      setNotificationLoading(false);
     }
   };
 
   useEffect(() => {
     loadProfile();
+    loadNotificationSettings();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -222,6 +352,7 @@ export function ProfilePage({ currentUser, onUserUpdated }: ProfilePageProps) {
                 onClick={() => fileInputRef.current?.click()}
                 className="hover:opacity-90"
                 style={{ backgroundColor: '#1E3A8A', color: 'white' }}
+                disabled={photoLoading}
               >
                 <Camera className="h-4 w-4 mr-2" />
                 {profileImage ? 'Trocar Foto' : 'Adicionar Foto'}
@@ -231,10 +362,10 @@ export function ProfilePage({ currentUser, onUserUpdated }: ProfilePageProps) {
                 onClick={handleDeletePhoto}
                 className="hover:opacity-90"
                 style={{ backgroundColor: '#DC2626', color: 'white' }}
-                disabled={!profileImage}
+                disabled={!profileImage || photoLoading}
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                Excluir Foto
+                {photoLoading ? 'Processando...' : 'Excluir Foto'}
               </Button>
               <input
                 ref={fileInputRef}
@@ -242,6 +373,7 @@ export function ProfilePage({ currentUser, onUserUpdated }: ProfilePageProps) {
                 accept="image/*"
                 className="hidden"
                 onChange={handlePhotoUpload}
+                disabled={photoLoading}
               />
             </div>
             {photoMessage && (
@@ -286,6 +418,7 @@ export function ProfilePage({ currentUser, onUserUpdated }: ProfilePageProps) {
                 className="w-full px-3 py-2 border rounded-lg"
                 style={{ borderColor: '#D1D5DB' }}
                 required
+                disabled={profileLoading}
               />
             </div>
             <div>
@@ -297,6 +430,7 @@ export function ProfilePage({ currentUser, onUserUpdated }: ProfilePageProps) {
                 className="w-full px-3 py-2 border rounded-lg"
                 style={{ borderColor: '#D1D5DB' }}
                 required
+                disabled={profileLoading}
               />
             </div>
             <div>
@@ -308,6 +442,7 @@ export function ProfilePage({ currentUser, onUserUpdated }: ProfilePageProps) {
                 className="w-full px-3 py-2 border rounded-lg"
                 style={{ borderColor: '#D1D5DB' }}
                 placeholder="(00) 00000-0000"
+                disabled={profileLoading}
               />
             </div>
             <div>
@@ -318,6 +453,7 @@ export function ProfilePage({ currentUser, onUserUpdated }: ProfilePageProps) {
                 onChange={(e) => setProfileForm((p) => ({ ...p, birthDate: e.target.value }))}
                 className="w-full px-3 py-2 border rounded-lg"
                 style={{ borderColor: '#D1D5DB' }}
+                disabled={profileLoading}
               />
             </div>
             <div>
@@ -329,11 +465,29 @@ export function ProfilePage({ currentUser, onUserUpdated }: ProfilePageProps) {
                 style={{ borderColor: '#D1D5DB' }}
                 rows={4}
                 placeholder="Conte um pouco sobre você..."
+                disabled={profileLoading}
               />
+              <p className="text-xs mt-1" style={{ color: profileForm.bio.length > 280 ? '#DC2626' : '#6B7280' }}>
+                {profileForm.bio.length}/280
+              </p>
             </div>
-            <div className="flex justify-end">
-              <Button type="submit" style={{ backgroundColor: '#1E3A8A', color: 'white' }} className="hover:opacity-90">
-                Salvar Perfil
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                onClick={handleResetProfileForm}
+                className="hover:opacity-90"
+                style={{ backgroundColor: '#6B7280', color: 'white' }}
+                disabled={!profileIsDirty || profileLoading}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                style={{ backgroundColor: '#1E3A8A', color: 'white' }}
+                className="hover:opacity-90"
+                disabled={profileLoading}
+              >
+                {profileLoading ? 'Salvando...' : 'Salvar Perfil'}
               </Button>
             </div>
           </form>
@@ -366,6 +520,7 @@ export function ProfilePage({ currentUser, onUserUpdated }: ProfilePageProps) {
                 className="w-full px-3 py-2 border rounded-lg"
                 style={{ borderColor: '#D1D5DB' }}
                 required
+                disabled={passwordLoading}
               />
             </div>
             <div>
@@ -377,6 +532,7 @@ export function ProfilePage({ currentUser, onUserUpdated }: ProfilePageProps) {
                 className="w-full px-3 py-2 border rounded-lg"
                 style={{ borderColor: '#D1D5DB' }}
                 required
+                disabled={passwordLoading}
               />
             </div>
             <div>
@@ -388,16 +544,103 @@ export function ProfilePage({ currentUser, onUserUpdated }: ProfilePageProps) {
                 className="w-full px-3 py-2 border rounded-lg"
                 style={{ borderColor: '#D1D5DB' }}
                 required
+                disabled={passwordLoading}
               />
             </div>
             <div className="flex justify-end">
-              <Button type="submit" style={{ backgroundColor: '#1E3A8A', color: 'white' }} className="hover:opacity-90">
-                Alterar Senha
+              <Button
+                type="submit"
+                style={{ backgroundColor: '#1E3A8A', color: 'white' }}
+                className="hover:opacity-90"
+                disabled={passwordLoading}
+              >
+                {passwordLoading ? 'Alterando...' : 'Alterar Senha'}
               </Button>
             </div>
           </form>
         </Card>
       </div>
+
+      <Card className="p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Bell className="h-5 w-5" style={{ color: '#1E3A8A' }} />
+          <h2 className="text-lg font-semibold" style={{ color: '#1E3A8A' }}>Configurações de Notificação</h2>
+        </div>
+
+        {notificationMessage && (
+          <div className="mb-4 p-3 rounded-lg text-sm" style={{ backgroundColor: '#DCFCE7', color: '#166534' }}>
+            {notificationMessage}
+          </div>
+        )}
+        {notificationError && (
+          <div className="mb-4 p-3 rounded-lg text-sm" style={{ backgroundColor: '#FEE2E2', color: '#991B1B' }}>
+            {notificationError}
+          </div>
+        )}
+
+        <form onSubmit={handleNotificationSubmit} className="space-y-4">
+          <label className="flex items-center justify-between gap-3">
+            <span className="text-sm">Notificações por email</span>
+            <input
+              type="checkbox"
+              checked={notificationSettings.emailNotifications}
+              onChange={(e) => setNotificationSettings((p) => ({ ...p, emailNotifications: e.target.checked }))}
+              disabled={notificationLoading}
+            />
+          </label>
+
+          <label className="flex items-center justify-between gap-3">
+            <span className="text-sm">Notificações push</span>
+            <input
+              type="checkbox"
+              checked={notificationSettings.pushNotifications}
+              onChange={(e) => setNotificationSettings((p) => ({ ...p, pushNotifications: e.target.checked }))}
+              disabled={notificationLoading}
+            />
+          </label>
+
+          <label className="flex items-center justify-between gap-3">
+            <span className="text-sm">Lembretes de transações recorrentes</span>
+            <input
+              type="checkbox"
+              checked={notificationSettings.recurringTransactionReminders}
+              onChange={(e) => setNotificationSettings((p) => ({ ...p, recurringTransactionReminders: e.target.checked }))}
+              disabled={notificationLoading}
+            />
+          </label>
+
+          <label className="flex items-center justify-between gap-3">
+            <span className="text-sm">Lembretes de pagamento de financiamento</span>
+            <input
+              type="checkbox"
+              checked={notificationSettings.financingPaymentReminders}
+              onChange={(e) => setNotificationSettings((p) => ({ ...p, financingPaymentReminders: e.target.checked }))}
+              disabled={notificationLoading}
+            />
+          </label>
+
+          <label className="flex items-center justify-between gap-3">
+            <span className="text-sm">Atualizações de progresso de metas</span>
+            <input
+              type="checkbox"
+              checked={notificationSettings.goalProgressUpdates}
+              onChange={(e) => setNotificationSettings((p) => ({ ...p, goalProgressUpdates: e.target.checked }))}
+              disabled={notificationLoading}
+            />
+          </label>
+
+          <div className="flex justify-end">
+            <Button
+              type="submit"
+              style={{ backgroundColor: '#1E3A8A', color: 'white' }}
+              className="hover:opacity-90"
+              disabled={notificationLoading}
+            >
+              {notificationLoading ? 'Salvando...' : 'Salvar Notificações'}
+            </Button>
+          </div>
+        </form>
+      </Card>
     </div>
   );
 }
