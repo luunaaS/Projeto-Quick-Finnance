@@ -82,11 +82,9 @@ export default function App() {
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const [transactionsData, financingsData, recurringData, multiCurrencyData] = await Promise.all([
+      const [transactionsData, financingsData] = await Promise.all([
         api.getTransactions(),
         api.getFinancings(),
-        api.getRecurringTransactions(),
-        api.getMultiCurrencyTransactions(),
       ]);
 
       const mappedTransactions = transactionsData.map((t: any) => ({
@@ -98,27 +96,7 @@ export default function App() {
         date: t.date,
       }));
 
-      const recurringSynthetic = (recurringData || [])
-        .filter((r: any) => r && r.isActive)
-        .map((r: any) => ({
-          id: `recurring-${r.id}`,
-          type: (r.type || '').toLowerCase() as 'income' | 'expense',
-          amount: Number(r.amount) || 0,
-          category: r.category || 'Recorrente',
-          description: `${r.name || 'Recorrente'} (Recorrente)`,
-          date: r.nextProcessing || new Date().toISOString().slice(0, 10),
-        }));
-
-      const multiCurrencySynthetic = (multiCurrencyData || []).map((m: any) => ({
-        id: `multi-${m.id}`,
-        type: (m.type || '').toLowerCase() as 'income' | 'expense',
-        amount: Number(m.convertedAmount ?? m.amount) || 0,
-        category: m.category || 'Multi-moeda',
-        description: `${m.description || 'Transação'} (${m.currency || 'FX'}→BRL)`,
-        date: m.date || new Date().toISOString().slice(0, 10),
-      }));
-
-      setTransactions([...multiCurrencySynthetic, ...recurringSynthetic, ...mappedTransactions]);
+      setTransactions(mappedTransactions);
 
       setFinancings(financingsData.map((f: any) => ({
         id: f.id.toString(),
@@ -319,6 +297,24 @@ export default function App() {
       }, ...prev]);
     } catch (error) {
       console.error('Error creating financing:', error);
+    }
+  };
+
+  const handleRegisterFinancingPayment = async (financingId: string, amount: number) => {
+    try {
+      const updated = await api.registerFinancingPayment(financingId, amount);
+      setFinancings(prev =>
+        prev.map(f =>
+          f.id === financingId
+            ? {
+                ...f,
+                remainingAmount: updated.remainingAmount,
+              }
+            : f
+        )
+      );
+    } catch (error) {
+      console.error('Error registering financing payment:', error);
     }
   };
 
@@ -526,6 +522,7 @@ export default function App() {
           <FinancingPage
             financings={financings}
             onAddFinancing={addFinancing}
+            onRegisterPayment={handleRegisterFinancingPayment}
           />
         );
       case 'reports':
