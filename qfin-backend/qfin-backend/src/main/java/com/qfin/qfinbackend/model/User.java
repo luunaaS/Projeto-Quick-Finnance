@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDate;
 
@@ -43,7 +44,10 @@ public class User {
     @Column(columnDefinition = "TEXT")
     private String profileImageBase64;
 
+    // Sem NOT NULL no schema para não quebrar atualização de bancos já existentes
+    // com registros antigos; o valor padrão é garantido pela aplicação e pelo
+    // ColumnDefault para novos registros.
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @ColumnDefault("'USER'")
     private UserRole role = UserRole.USER;
 }

@@ -9,6 +9,7 @@ import { InvestmentsPage } from './components/pages/investments-page';
 import { RecurringTransactionsPage } from './components/pages/recurring-transactions-page';
 import { MultiCurrencyPage } from './components/pages/multi-currency-page';
 import { ProfilePage } from './components/pages/profile-page';
+import { CategoriesPage } from './components/pages/categories-page';
 import api from '../services/api';
 
 interface Transaction {
@@ -135,8 +136,29 @@ export default function App() {
     }
   }, []);
 
+  // Read reset token from URL (password recovery link from email)
+  const [hasResetTokenInUrl, setHasResetTokenInUrl] = useState(false);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlResetToken = params.get('resetToken');
+    if (urlResetToken) {
+      // Force the login/reset screen even if a session exists
+      api.clearToken();
+      setIsAuthenticated(false);
+      setResetToken(urlResetToken);
+      setIsResetPassword(true);
+      setHasResetTokenInUrl(true);
+      // Clean the token from the URL bar
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
   // Check if user is already authenticated
   useEffect(() => {
+    if (hasResetTokenInUrl) {
+      setIsLoading(false);
+      return;
+    }
     const token = api.getToken();
     if (token) {
       setIsAuthenticated(true);
@@ -144,7 +166,7 @@ export default function App() {
     } else {
       setIsLoading(false);
     }
-  }, [loadData]);
+  }, [loadData, hasResetTokenInUrl]);
 
   // Listen for custom navigation events
   useEffect(() => {
@@ -159,6 +181,8 @@ export default function App() {
       setIsAuthenticated(false);
       setTransactions([]);
       setFinancings([]);
+      setCurrentPage('dashboard');
+      setLoginForm({ email: '', password: '', name: '', cpf: '' });
     };
 
     window.addEventListener('navigate', handleNavigate);
@@ -513,6 +537,8 @@ export default function App() {
         );
       case 'help':
         return <HelpPage />;
+      case 'categories':
+        return <CategoriesPage />;
       case 'investments':
         return <InvestmentsPage />;
       case 'recurring':

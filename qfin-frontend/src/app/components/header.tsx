@@ -1,4 +1,4 @@
-import { DollarSign, Menu, User, HelpCircle, TrendingUp, Repeat, Globe } from "lucide-react";
+import { DollarSign, Menu, User, HelpCircle, TrendingUp, Repeat, Globe, Tag } from "lucide-react";
 import { Button } from "./ui/simple-button";
 
 interface HeaderProps {
@@ -80,13 +80,22 @@ export function Header({ currentPage, onNavigate, currentUser }: HeaderProps) {
             <TrendingUp className="h-4 w-4" />
             Investimentos
           </Button>
-          <Button 
+          <Button
             variant="ghost"
             className="hover:bg-blue-50"
             style={{ color: currentPage === 'financing' ? '#1E3A8A' : '#6B7280' }}
             onClick={() => onNavigate('financing')}
           >
             Financiamentos
+          </Button>
+          <Button
+            variant="ghost"
+            className="hover:bg-blue-50 flex items-center gap-2"
+            style={{ color: currentPage === 'categories' ? '#1E3A8A' : '#6B7280' }}
+            onClick={() => onNavigate('categories')}
+          >
+            <Tag className="h-4 w-4" />
+            Categorias
           </Button>
           <Button 
             variant="ghost"

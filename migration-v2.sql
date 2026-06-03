@@ -3,7 +3,10 @@
 
 -- 1. Adicionar campos CPF e role na tabela users
 ALTER TABLE users ADD COLUMN IF NOT EXISTS cpf VARCHAR(14) UNIQUE;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) NOT NULL DEFAULT 'USER';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'USER';
+
+-- Preencher role para usuários já existentes (criados antes desta migração)
+UPDATE users SET role = 'USER' WHERE role IS NULL;
 
 -- 2. Tabela de log de ações (Histórico)
 CREATE TABLE IF NOT EXISTS action_logs (

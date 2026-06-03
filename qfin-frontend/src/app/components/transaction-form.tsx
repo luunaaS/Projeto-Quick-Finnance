@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Minus } from "lucide-react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -6,6 +6,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Textarea } from "./ui/textarea";
+import api from "../../services/api";
 
 interface Transaction {
   id: string;
@@ -25,6 +26,31 @@ export function TransactionForm({ onAddTransaction }: TransactionFormProps) {
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
+  const [apiIncomeCategories, setApiIncomeCategories] = useState<string[] | null>(null);
+  const [apiExpenseCategories, setApiExpenseCategories] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    api
+      .getCategories()
+      .then((cats) => {
+        if (!active) return;
+        const income = (cats || [])
+          .filter((c: any) => c.type === 'INCOME')
+          .map((c: any) => c.name as string);
+        const expense = (cats || [])
+          .filter((c: any) => c.type === 'EXPENSE')
+          .map((c: any) => c.name as string);
+        if (income.length > 0) setApiIncomeCategories(income);
+        if (expense.length > 0) setApiExpenseCategories(expense);
+      })
+      .catch(() => {
+        // Mantém as categorias padrão como fallback
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +70,7 @@ export function TransactionForm({ onAddTransaction }: TransactionFormProps) {
     setDescription('');
   };
 
-  const incomeCategories = [
+  const defaultIncomeCategories = [
     'Salário',
     'Freelance',
     'Investimentos',
@@ -52,7 +78,7 @@ export function TransactionForm({ onAddTransaction }: TransactionFormProps) {
     'Outros'
   ];
 
-  const expenseCategories = [
+  const defaultExpenseCategories = [
     'Alimentação',
     'Transporte',
     'Moradia',
@@ -62,6 +88,9 @@ export function TransactionForm({ onAddTransaction }: TransactionFormProps) {
     'Compras',
     'Outros'
   ];
+
+  const incomeCategories = apiIncomeCategories ?? defaultIncomeCategories;
+  const expenseCategories = apiExpenseCategories ?? defaultExpenseCategories;
 
   return (
     <Card className="border shadow-sm">

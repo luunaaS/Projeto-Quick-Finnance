@@ -111,6 +111,35 @@ class ApiService {
     return this.request('/dashboard');
   }
 
+  // Categories
+  async getCategories(): Promise<any[]> {
+    return this.request('/categories');
+  }
+
+  async getCategoriesByType(type: 'INCOME' | 'EXPENSE'): Promise<any[]> {
+    return this.request(`/categories/type/${type}`);
+  }
+
+  async createCategory(category: { name: string; type: 'INCOME' | 'EXPENSE'; parentId?: number | null }): Promise<any> {
+    return this.request('/categories', {
+      method: 'POST',
+      body: JSON.stringify(category),
+    });
+  }
+
+  async updateCategory(id: number, category: { name: string; parentId?: number | null }): Promise<any> {
+    return this.request(`/categories/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(category),
+    });
+  }
+
+  async deleteCategory(id: number): Promise<{ message: string }> {
+    return this.request(`/categories/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Transactions
   async getTransactions(): Promise<any[]> {
     return this.request('/transactions');

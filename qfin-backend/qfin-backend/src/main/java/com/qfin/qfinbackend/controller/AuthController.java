@@ -99,12 +99,15 @@ public class AuthController {
                 return ResponseEntity.badRequest().body(Map.of("error", "Email é obrigatório"));
             }
             String token = passwordResetService.generateResetToken(request.getEmail());
-            // In production, send via email. Returning token here for development.
-            return ResponseEntity.ok(Map.of(
-                    "message", "Se o email estiver cadastrado, você receberá as instruções de recuperação.",
-                    "resetToken", token
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Se o email estiver cadastrado, você receberá um link de recuperação no seu email.");
+            // Em modo de desenvolvimento (sem SMTP), o token é devolvido para testes locais.
+            if (token != null) {
+                response.put("resetToken", token);
+            }
+            return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
+            // Mensagem genérica para evitar enumeração de emails
             return ResponseEntity.ok(Map.of("message", e.getMessage()));
         }
     }
