@@ -4,11 +4,15 @@ import com.qfin.qfinbackend.dto.CategorySummaryDTO;
 import com.qfin.qfinbackend.dto.ReportRequestDTO;
 import com.qfin.qfinbackend.dto.ReportSummaryDTO;
 import com.qfin.qfinbackend.model.Financing;
+import com.qfin.qfinbackend.model.Investment;
+import com.qfin.qfinbackend.model.MultiCurrencyTransaction;
 import com.qfin.qfinbackend.model.RecurringTransaction;
 import com.qfin.qfinbackend.model.Transaction;
 import com.qfin.qfinbackend.model.Transaction.TransactionType;
 import com.qfin.qfinbackend.model.User;
 import com.qfin.qfinbackend.repository.FinancingRepository;
+import com.qfin.qfinbackend.repository.InvestmentRepository;
+import com.qfin.qfinbackend.repository.MultiCurrencyTransactionRepository;
 import com.qfin.qfinbackend.repository.RecurringTransactionRepository;
 import com.qfin.qfinbackend.repository.TransactionRepository;
 import com.qfin.qfinbackend.repository.UserRepository;
@@ -20,7 +24,6 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -39,6 +42,12 @@ public class ReportService {
 
     @Autowired
     private RecurringTransactionRepository recurringTransactionRepository;
+
+    @Autowired
+    private MultiCurrencyTransactionRepository multiCurrencyTransactionRepository;
+
+    @Autowired
+    private InvestmentRepository investmentRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -63,11 +72,11 @@ public class ReportService {
         List<CategorySummaryDTO> categoryBreakdown = buildCategoryBreakdown(transactions);
 
         return new ReportSummaryDTO(
-            totalIncome,
-            totalExpense,
-            totalIncome - totalExpense,
-            (long) transactions.size(),
-            categoryBreakdown
+                totalIncome,
+                totalExpense,
+                totalIncome - totalExpense,
+                (long) transactions.size(),
+                categoryBreakdown
         );
     }
 
@@ -80,15 +89,160 @@ public class ReportService {
             type = TransactionType.valueOf(request.getType().toUpperCase());
         }
 
-        List<Transaction> baseTransactions = transactionRepository.findByFilters(userId, startDate, endDate, type, request.getCategory());
+        List<Transaction> baseTransactions = transactionRepository.findByFilters(
+                userId, startDate, endDate, type, request.getCategory());
 
         List<Transaction> recurringProjectedTransactions = buildRecurringProjectedTransactions(
                 userId, startDate, endDate, type, request.getCategory());
 
+        List<Transaction> financingSyntheticTransactions = buildFinancingSyntheticTransactions(
+                userId, startDate, endDate, type, request.getCategory());
+
+        List<Transaction> investmentSyntheticTransactions = buildInvestmentSyntheticTransactions(
+                userId, startDate, endDate, type, request.getCategory());
+
+        List<Transaction> multiCurrencyFallbackTransactions = buildMissingMultiCurrencyTransactions(
+                userId, startDate, endDate, type, request.getCategory(), baseTransactions);
+
+        // Evita duplicidade caso recorrente já tenha sido materializada em Transaction
+        List<Transaction> dedupedRecurring = recurringProjectedTransactions.stream()
+                .filter(rt -> baseTransactions.stream().noneMatch(bt ->
+                        bt.getDate() != null
+                                && rt.getDate() != null
+                                && bt.getDate().equals(rt.getDate())
+                                && bt.getType() == rt.getType()
+                                && safe(bt.getCategory()).equalsIgnoreCase(safe(rt.getCategory()))
+                                && safe(bt.getDescription()).contains("[REC:")
+                                && bt.getAmount() != null
+                                && rt.getAmount() != null
+                                && Math.abs(bt.getAmount() - rt.getAmount()) < 0.0001
+                ))
+                .collect(Collectors.toList());
+
         List<Transaction> merged = new ArrayList<>(baseTransactions);
-        merged.addAll(recurringProjectedTransactions);
+        merged.addAll(dedupedRecurring);
+        merged.addAll(financingSyntheticTransactions);
+        merged.addAll(investmentSyntheticTransactions);
+        merged.addAll(multiCurrencyFallbackTransactions);
         merged.sort(Comparator.comparing(Transaction::getDate).reversed());
         return merged;
+    }
+
+    private String safe(String value) {
+        return value == null ? "" : value;
+    }
+
+    private List<Transaction> buildFinancingSyntheticTransactions(
+            Long userId,
+            LocalDate startDate,
+            LocalDate endDate,
+            TransactionType typeFilter,
+            String categoryFilter
+    ) {
+        if (typeFilter != null && typeFilter != TransactionType.EXPENSE) return List.of();
+
+        return financingRepository.findAll().stream()
+                .filter(f -> f.getUser() != null && f.getUser().getId() != null && f.getUser().getId().equals(userId))
+                .filter(f -> f.getMonthlyPayment() != null && f.getMonthlyPayment() > 0)
+                .flatMap(f -> {
+                    List<Transaction> rows = new ArrayList<>();
+                    LocalDate cursor = startDate.withDayOfMonth(1);
+                    LocalDate limit = endDate.withDayOfMonth(1);
+
+                    while (!cursor.isAfter(limit)) {
+                        LocalDate paymentDate = cursor.withDayOfMonth(1);
+                        if ((f.getEndDate() == null || !paymentDate.isAfter(f.getEndDate()))
+                                && !paymentDate.isBefore(startDate)
+                                && !paymentDate.isAfter(endDate)) {
+                            Transaction synthetic = new Transaction();
+                            synthetic.setUser(f.getUser());
+                            synthetic.setDate(paymentDate);
+                            synthetic.setType(TransactionType.EXPENSE);
+                            synthetic.setAmount(f.getMonthlyPayment());
+                            synthetic.setCategory("FINANCING");
+                            synthetic.setDescription("[FIN:" + f.getId() + "] " + f.getName());
+                            rows.add(synthetic);
+                        }
+                        cursor = cursor.plusMonths(1);
+                    }
+                    return rows.stream();
+                })
+                .filter(t -> categoryFilter == null || categoryFilter.isBlank()
+                        || categoryFilter.equalsIgnoreCase(t.getCategory()))
+                .collect(Collectors.toList());
+    }
+
+    private List<Transaction> buildInvestmentSyntheticTransactions(
+            Long userId,
+            LocalDate startDate,
+            LocalDate endDate,
+            TransactionType typeFilter,
+            String categoryFilter
+    ) {
+        if (typeFilter != null && typeFilter != TransactionType.INCOME) return List.of();
+
+        return investmentRepository.findAll().stream()
+                .filter(i -> i.getUser() != null && i.getUser().getId() != null && i.getUser().getId().equals(userId))
+                .filter(i -> i.getPurchaseDate() != null && !i.getPurchaseDate().isBefore(startDate) && !i.getPurchaseDate().isAfter(endDate))
+                .map(i -> {
+                    double gain = (i.getCurrentValue() != null ? i.getCurrentValue() : 0.0)
+                            - (i.getAmount() != null ? i.getAmount() : 0.0);
+                    if (gain <= 0) return null;
+
+                    Transaction synthetic = new Transaction();
+                    synthetic.setUser(i.getUser());
+                    synthetic.setDate(i.getPurchaseDate());
+                    synthetic.setType(TransactionType.INCOME);
+                    synthetic.setAmount(gain);
+                    synthetic.setCategory("INVESTMENT");
+                    synthetic.setDescription("[INV:" + i.getId() + "] " + i.getName());
+                    return synthetic;
+                })
+                .filter(t -> t != null)
+                .filter(t -> categoryFilter == null || categoryFilter.isBlank()
+                        || categoryFilter.equalsIgnoreCase(t.getCategory()))
+                .collect(Collectors.toList());
+    }
+
+    private List<Transaction> buildMissingMultiCurrencyTransactions(
+            Long userId,
+            LocalDate startDate,
+            LocalDate endDate,
+            TransactionType typeFilter,
+            String categoryFilter,
+            List<Transaction> baseTransactions
+    ) {
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) return List.of();
+
+        return multiCurrencyTransactionRepository.findByUserOrderByDateDesc(user).stream()
+                .filter(mt -> mt.getDate() != null && !mt.getDate().isBefore(startDate) && !mt.getDate().isAfter(endDate))
+                .filter(mt -> {
+                    TransactionType mappedType = mt.getType() == MultiCurrencyTransaction.TransactionType.INCOME
+                            ? TransactionType.INCOME
+                            : TransactionType.EXPENSE;
+                    return typeFilter == null || mappedType == typeFilter;
+                })
+                .filter(mt -> categoryFilter == null || categoryFilter.isBlank()
+                        || categoryFilter.equalsIgnoreCase(mt.getCategory()))
+                .filter(mt -> {
+                    String marker = "[MC:" + mt.getId() + "]";
+                    return baseTransactions.stream().noneMatch(t ->
+                            t.getDescription() != null && t.getDescription().startsWith(marker));
+                })
+                .map(mt -> {
+                    Transaction synthetic = new Transaction();
+                    synthetic.setUser(user);
+                    synthetic.setDate(mt.getDate());
+                    synthetic.setType(mt.getType() == MultiCurrencyTransaction.TransactionType.INCOME
+                            ? TransactionType.INCOME
+                            : TransactionType.EXPENSE);
+                    synthetic.setAmount(mt.getAmountInBaseCurrency() != null ? mt.getAmountInBaseCurrency() : 0.0);
+                    synthetic.setCategory(mt.getCategory());
+                    synthetic.setDescription("[MC-FALLBACK:" + mt.getId() + "] " + mt.getDescription());
+                    return synthetic;
+                })
+                .collect(Collectors.toList());
     }
 
     private List<CategorySummaryDTO> buildCategoryBreakdown(List<Transaction> transactions) {
@@ -201,62 +355,62 @@ public class ReportService {
 
     public byte[] exportTransactionsToCSV(Long userId, ReportRequestDTO request) throws IOException {
         List<Transaction> transactions = getTransactionsByFilters(userId, request);
-        
+
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         OutputStreamWriter writer = new OutputStreamWriter(out);
-        
+
         CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
-            .setHeader("Data", "Tipo", "Categoria", "Descrição", "Valor")
-            .build();
-        
+                .setHeader("Data", "Tipo", "Categoria", "Descrição", "Valor")
+                .build();
+
         try (CSVPrinter printer = new CSVPrinter(writer, csvFormat)) {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-            
+
             for (Transaction transaction : transactions) {
                 printer.printRecord(
-                    transaction.getDate().format(formatter),
-                    transaction.getType().toString(),
-                    transaction.getCategory(),
-                    transaction.getDescription(),
-                    String.format("%.2f", transaction.getAmount())
+                        transaction.getDate().format(formatter),
+                        transaction.getType().toString(),
+                        transaction.getCategory(),
+                        transaction.getDescription(),
+                        String.format("%.2f", transaction.getAmount())
                 );
             }
-            
+
             printer.flush();
         }
-        
+
         return out.toByteArray();
     }
 
     public byte[] exportFinancingsToCSV(Long userId) throws IOException {
         List<Financing> financings = financingRepository.findAll().stream()
-            .filter(f -> f.getUser().getId().equals(userId))
-            .collect(Collectors.toList());
-        
+                .filter(f -> f.getUser().getId().equals(userId))
+                .collect(Collectors.toList());
+
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         OutputStreamWriter writer = new OutputStreamWriter(out);
-        
+
         CSVFormat csvFormat = CSVFormat.DEFAULT.builder()
-            .setHeader("Nome", "Tipo", "Valor Total", "Valor Restante", "Parcela Mensal", "Data Final")
-            .build();
-        
+                .setHeader("Nome", "Tipo", "Valor Total", "Valor Restante", "Parcela Mensal", "Data Final")
+                .build();
+
         try (CSVPrinter printer = new CSVPrinter(writer, csvFormat)) {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-            
+
             for (Financing financing : financings) {
                 printer.printRecord(
-                    financing.getName(),
-                    financing.getType().toString(),
-                    String.format("%.2f", financing.getTotalAmount()),
-                    String.format("%.2f", financing.getRemainingAmount()),
-                    String.format("%.2f", financing.getMonthlyPayment()),
-                    financing.getEndDate().format(formatter)
+                        financing.getName(),
+                        financing.getType().toString(),
+                        String.format("%.2f", financing.getTotalAmount()),
+                        String.format("%.2f", financing.getRemainingAmount()),
+                        String.format("%.2f", financing.getMonthlyPayment()),
+                        financing.getEndDate().format(formatter)
                 );
             }
-            
+
             printer.flush();
         }
-        
+
         return out.toByteArray();
     }
 

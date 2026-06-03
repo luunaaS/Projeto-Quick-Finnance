@@ -52,18 +52,8 @@ public class DashboardService {
                 .mapToDouble(t -> t.getAmount() != null ? t.getAmount() : 0.0)
                 .sum();
 
-        // fallback: contabilizar multi-moeda sem espelho em Transaction
-        double multiIncome = multiCurrencyTransactions.stream()
-                .filter(t -> t.getType() == MultiCurrencyTransaction.TransactionType.INCOME)
-                .mapToDouble(t -> t.getAmountInBaseCurrency() != null ? t.getAmountInBaseCurrency() : 0.0)
-                .sum();
-
-        double multiExpense = multiCurrencyTransactions.stream()
-                .filter(t -> t.getType() == MultiCurrencyTransaction.TransactionType.EXPENSE)
-                .mapToDouble(t -> t.getAmountInBaseCurrency() != null ? t.getAmountInBaseCurrency() : 0.0)
-                .sum();
-
-        // recorrentes ativos como visão de compromisso/receita planejada
+        // Multi-moeda já é espelhada em Transaction ([MC:id]); evitar dupla contagem no consolidado
+        // recorrentes ativos entram como visão planejada de receita/compromisso
         double recurringIncome = recurringTransactions.stream()
                 .filter(t -> t.getType() == RecurringTransaction.TransactionType.INCOME)
                 .mapToDouble(t -> t.getAmount() != null ? t.getAmount() : 0.0)
@@ -74,8 +64,8 @@ public class DashboardService {
                 .mapToDouble(t -> t.getAmount() != null ? t.getAmount() : 0.0)
                 .sum();
 
-        totalIncome += multiIncome + recurringIncome;
-        totalExpenses += multiExpense + recurringExpense;
+        totalIncome += recurringIncome;
+        totalExpenses += recurringExpense;
 
         double totalBalance = totalIncome - totalExpenses;
 
