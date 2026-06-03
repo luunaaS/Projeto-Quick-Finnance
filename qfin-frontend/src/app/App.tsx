@@ -9,6 +9,7 @@ import { InvestmentsPage } from './components/pages/investments-page';
 import { RecurringTransactionsPage } from './components/pages/recurring-transactions-page';
 import { MultiCurrencyPage } from './components/pages/multi-currency-page';
 import { ProfilePage } from './components/pages/profile-page';
+import { CategoriesPage } from './components/pages/categories-page';
 import api from '../services/api';
 
 interface Transaction {
@@ -36,9 +37,13 @@ export default function App() {
   const [financings, setFinancings] = useState<Financing[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [loginForm, setLoginForm] = useState({ email: '', password: '', name: '' });
+  const [loginForm, setLoginForm] = useState({ email: '', password: '', name: '', cpf: '' });
   const [isRegistering, setIsRegistering] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [isResetPassword, setIsResetPassword] = useState(false);
+  const [resetToken, setResetToken] = useState('');
   const [authError, setAuthError] = useState('');
+  const [authSuccess, setAuthSuccess] = useState('');
   const [currentUser, setCurrentUser] = useState({
     name: '',
     email: '',
@@ -131,8 +136,29 @@ export default function App() {
     }
   }, []);
 
+  // Read reset token from URL (password recovery link from email)
+  const [hasResetTokenInUrl, setHasResetTokenInUrl] = useState(false);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlResetToken = params.get('resetToken');
+    if (urlResetToken) {
+      // Force the login/reset screen even if a session exists
+      api.clearToken();
+      setIsAuthenticated(false);
+      setResetToken(urlResetToken);
+      setIsResetPassword(true);
+      setHasResetTokenInUrl(true);
+      // Clean the token from the URL bar
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
   // Check if user is already authenticated
   useEffect(() => {
+    if (hasResetTokenInUrl) {
+      setIsLoading(false);
+      return;
+    }
     const token = api.getToken();
     if (token) {
       setIsAuthenticated(true);
@@ -140,7 +166,7 @@ export default function App() {
     } else {
       setIsLoading(false);
     }
-  }, [loadData]);
+  }, [loadData, hasResetTokenInUrl]);
 
   // Listen for custom navigation events
   useEffect(() => {
@@ -155,6 +181,8 @@ export default function App() {
       setIsAuthenticated(false);
       setTransactions([]);
       setFinancings([]);
+      setCurrentPage('dashboard');
+      setLoginForm({ email: '', password: '', name: '', cpf: '' });
     };
 
     window.addEventListener('navigate', handleNavigate);
@@ -189,7 +217,7 @@ export default function App() {
     e.preventDefault();
     setAuthError('');
     try {
-      const response = await api.register(loginForm.name, loginForm.email, loginForm.password);
+      const response = await api.register(loginForm.name, loginForm.email, loginForm.password, loginForm.cpf || undefined);
       setCurrentUser({
         name: response?.user?.name || loginForm.name,
         email: response?.user?.email || loginForm.email,
@@ -201,7 +229,41 @@ export default function App() {
       setIsAuthenticated(true);
       loadData();
     } catch (error: any) {
-      setAuthError('Erro ao registrar. Verifique os dados e tente novamente.');
+      const msg = error?.message || '';
+      try { const parsed = JSON.parse(msg); setAuthError(parsed.error || 'Erro ao registrar.'); }
+      catch { setAuthError(msg || 'Erro ao registrar. Verifique os dados e tente novamente.'); }
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    setAuthSuccess('');
+    try {
+      const response = await api.forgotPassword(loginForm.email);
+      setAuthSuccess(response.message || 'Verifique seu email.');
+      if (response.resetToken) {
+        setResetToken(response.resetToken);
+        setIsResetPassword(true);
+        setIsForgotPassword(false);
+      }
+    } catch (error: any) {
+      setAuthError('Erro ao solicitar recuperação. Tente novamente.');
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    setAuthSuccess('');
+    try {
+      const response = await api.resetPassword(resetToken, loginForm.password);
+      setAuthSuccess(response.message || 'Senha redefinida com sucesso!');
+      setTimeout(() => { setIsResetPassword(false); setIsForgotPassword(false); setAuthSuccess(''); }, 2000);
+    } catch (error: any) {
+      const msg = error?.message || '';
+      try { const parsed = JSON.parse(msg); setAuthError(parsed.error || 'Erro ao redefinir senha.'); }
+      catch { setAuthError(msg || 'Erro ao redefinir senha.'); }
     }
   };
 
@@ -274,7 +336,7 @@ export default function App() {
                 <h1 className="text-2xl font-bold" style={{ color: '#1E3A8A' }}>QFin</h1>
               </div>
               <p style={{ color: '#6B7280' }}>
-                {isRegistering ? 'Crie sua conta' : 'Faça login para continuar'}
+                {isResetPassword ? 'Redefinir senha' : isForgotPassword ? 'Recuperar senha' : isRegistering ? 'Crie sua conta' : 'Faça login para continuar'}
               </p>
             </div>
 
@@ -283,63 +345,144 @@ export default function App() {
                 {authError}
               </div>
             )}
+            {authSuccess && (
+              <div className="mb-4 p-3 rounded-lg text-sm" style={{ backgroundColor: '#D1FAE5', color: '#065F46' }}>
+                {authSuccess}
+              </div>
+            )}
 
-            <form onSubmit={isRegistering ? handleRegister : handleLogin} className="space-y-4">
-              {isRegistering && (
+            {isResetPassword ? (
+              <form onSubmit={handleResetPassword} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: '#374151' }}>Nome</label>
+                  <label className="block text-sm font-medium mb-1" style={{ color: '#374151' }}>Token de recuperação</label>
                   <input
                     type="text"
-                    value={loginForm.name}
-                    onChange={(e) => setLoginForm(prev => ({ ...prev, name: e.target.value }))}
+                    value={resetToken}
+                    onChange={(e) => setResetToken(e.target.value)}
                     className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2"
                     style={{ borderColor: '#D1D5DB' }}
-                    placeholder="Seu nome completo"
+                    placeholder="Cole o token recebido"
                     required
                   />
                 </div>
-              )}
-              <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: '#374151' }}>Email</label>
-                <input
-                  type="email"
-                  value={loginForm.email}
-                  onChange={(e) => setLoginForm(prev => ({ ...prev, email: e.target.value }))}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2"
-                  style={{ borderColor: '#D1D5DB' }}
-                  placeholder="seu@email.com"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: '#374151' }}>Senha</label>
-                <input
-                  type="password"
-                  value={loginForm.password}
-                  onChange={(e) => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2"
-                  style={{ borderColor: '#D1D5DB' }}
-                  placeholder="Sua senha"
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full py-2 px-4 rounded-lg text-white font-medium hover:opacity-90 transition-opacity"
-                style={{ backgroundColor: '#1E3A8A' }}
-              >
-                {isRegistering ? 'Registrar' : 'Entrar'}
-              </button>
-            </form>
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: '#374151' }}>Nova senha</label>
+                  <input
+                    type="password"
+                    value={loginForm.password}
+                    onChange={(e) => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2"
+                    style={{ borderColor: '#D1D5DB' }}
+                    placeholder="Mínimo 6 caracteres"
+                    required
+                  />
+                </div>
+                <button type="submit" className="w-full py-2 px-4 rounded-lg text-white font-medium hover:opacity-90 transition-opacity" style={{ backgroundColor: '#1E3A8A' }}>
+                  Redefinir senha
+                </button>
+              </form>
+            ) : isForgotPassword ? (
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: '#374151' }}>Email cadastrado</label>
+                  <input
+                    type="email"
+                    value={loginForm.email}
+                    onChange={(e) => setLoginForm(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2"
+                    style={{ borderColor: '#D1D5DB' }}
+                    placeholder="seu@email.com"
+                    required
+                  />
+                </div>
+                <button type="submit" className="w-full py-2 px-4 rounded-lg text-white font-medium hover:opacity-90 transition-opacity" style={{ backgroundColor: '#1E3A8A' }}>
+                  Enviar link de recuperação
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={isRegistering ? handleRegister : handleLogin} className="space-y-4">
+                {isRegistering && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium mb-1" style={{ color: '#374151' }}>Nome completo *</label>
+                      <input
+                        type="text"
+                        value={loginForm.name}
+                        onChange={(e) => setLoginForm(prev => ({ ...prev, name: e.target.value }))}
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2"
+                        style={{ borderColor: '#D1D5DB' }}
+                        placeholder="Seu nome completo"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1" style={{ color: '#374151' }}>CPF (opcional)</label>
+                      <input
+                        type="text"
+                        value={loginForm.cpf}
+                        onChange={(e) => setLoginForm(prev => ({ ...prev, cpf: e.target.value }))}
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2"
+                        style={{ borderColor: '#D1D5DB' }}
+                        placeholder="000.000.000-00"
+                        maxLength={14}
+                      />
+                    </div>
+                  </>
+                )}
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: '#374151' }}>Email *</label>
+                  <input
+                    type="email"
+                    value={loginForm.email}
+                    onChange={(e) => setLoginForm(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2"
+                    style={{ borderColor: '#D1D5DB' }}
+                    placeholder="seu@email.com"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: '#374151' }}>Senha * {isRegistering && <span className="text-gray-400 font-normal">(mín. 6 caracteres)</span>}</label>
+                  <input
+                    type="password"
+                    value={loginForm.password}
+                    onChange={(e) => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2"
+                    style={{ borderColor: '#D1D5DB' }}
+                    placeholder="Sua senha"
+                    required
+                  />
+                </div>
+                {!isRegistering && (
+                  <div className="text-right">
+                    <button type="button" onClick={() => { setIsForgotPassword(true); setAuthError(''); setAuthSuccess(''); }} className="text-sm hover:underline" style={{ color: '#1E3A8A' }}>
+                      Esqueci minha senha
+                    </button>
+                  </div>
+                )}
+                <button type="submit" className="w-full py-2 px-4 rounded-lg text-white font-medium hover:opacity-90 transition-opacity" style={{ backgroundColor: '#1E3A8A' }}>
+                  {isRegistering ? 'Registrar' : 'Entrar'}
+                </button>
+              </form>
+            )}
 
-            <div className="mt-4 text-center">
-              <button
-                onClick={() => { setIsRegistering(!isRegistering); setAuthError(''); }}
-                className="text-sm hover:underline"
-                style={{ color: '#1E3A8A' }}
-              >
-                {isRegistering ? 'Já tem conta? Faça login' : 'Não tem conta? Registre-se'}
-              </button>
+            <div className="mt-4 text-center space-y-2">
+              {(isForgotPassword || isResetPassword) ? (
+                <button onClick={() => { setIsForgotPassword(false); setIsResetPassword(false); setAuthError(''); setAuthSuccess(''); }} className="text-sm hover:underline" style={{ color: '#1E3A8A' }}>
+                  Voltar ao login
+                </button>
+              ) : (
+                <>
+                  <button onClick={() => { setIsRegistering(!isRegistering); setAuthError(''); setAuthSuccess(''); }} className="text-sm hover:underline block w-full" style={{ color: '#1E3A8A' }}>
+                    {isRegistering ? 'Já tem conta? Faça login' : 'Não tem conta? Registre-se'}
+                  </button>
+                  {isResetPassword || isForgotPassword ? null : (
+                    <button onClick={() => { setIsResetPassword(true); setAuthError(''); setAuthSuccess(''); }} className="text-sm hover:underline block w-full" style={{ color: '#6B7280' }}>
+                      Já tenho um token de recuperação
+                    </button>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -394,6 +537,8 @@ export default function App() {
         );
       case 'help':
         return <HelpPage />;
+      case 'categories':
+        return <CategoriesPage />;
       case 'investments':
         return <InvestmentsPage />;
       case 'recurring':

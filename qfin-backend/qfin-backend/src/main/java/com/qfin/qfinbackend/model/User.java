@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDate;
 
@@ -17,17 +18,20 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "Name cannot be empty")
+    @NotBlank(message = "Nome não pode ser vazio")
     private String name;
 
-    @NotBlank(message = "Email cannot be empty")
-    @Email(message = "Email should be valid")
+    @NotBlank(message = "Email não pode ser vazio")
+    @Email(message = "Email deve ser válido")
     @Column(unique = true)
     private String email;
 
     @JsonIgnore
-    @NotBlank(message = "Password cannot be empty")
+    @NotBlank(message = "Senha não pode ser vazia")
     private String password;
+
+    @Column(unique = true, length = 14)
+    private String cpf;
 
     private String phone;
 
@@ -36,7 +40,13 @@ public class User {
 
     private LocalDate birthDate;
 
-    @Lob
     @Column(columnDefinition = "TEXT")
     private String profileImageBase64;
+
+    // Sem NOT NULL no schema para não quebrar atualização de bancos já existentes
+    // com registros antigos; o valor padrão é garantido pela aplicação e pelo
+    // ColumnDefault para novos registros.
+    @Enumerated(EnumType.STRING)
+    @ColumnDefault("'USER'")
+    private UserRole role = UserRole.USER;
 }

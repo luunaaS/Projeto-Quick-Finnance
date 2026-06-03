@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { User, Lock, Camera, Trash2, Bell } from 'lucide-react';
+import { User, Lock, Camera, Trash2, Bell, LogOut } from 'lucide-react';
 import { Card } from '../ui/simple-card';
 import { Button } from '../ui/simple-button';
 import api from '../../../services/api';
@@ -300,6 +300,14 @@ export function ProfilePage({ currentUser, onUserUpdated }: ProfilePageProps) {
     } finally {
       setNotificationLoading(false);
     }
+  };
+
+  const handleLogout = () => {
+    const confirmed = window.confirm('Tem certeza que deseja sair da sua conta?');
+    if (!confirmed) return;
+    // Remove o token e dispara o evento que redireciona para a tela de login
+    api.clearToken();
+    window.dispatchEvent(new CustomEvent('auth:logout'));
   };
 
   useEffect(() => {
@@ -640,6 +648,29 @@ export function ProfilePage({ currentUser, onUserUpdated }: ProfilePageProps) {
             </Button>
           </div>
         </form>
+      </Card>
+
+      <Card className="p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <LogOut className="h-5 w-5" style={{ color: '#DC2626' }} />
+            <div>
+              <h2 className="text-lg font-semibold" style={{ color: '#DC2626' }}>Sair da Conta</h2>
+              <p className="text-sm" style={{ color: '#6B7280' }}>
+                Encerre sua sessão e volte para a tela de login.
+              </p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            onClick={handleLogout}
+            style={{ backgroundColor: '#DC2626', color: 'white' }}
+            className="hover:opacity-90"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Sair
+          </Button>
+        </div>
       </Card>
     </div>
   );
