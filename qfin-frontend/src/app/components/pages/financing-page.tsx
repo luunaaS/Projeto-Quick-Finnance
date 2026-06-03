@@ -22,9 +22,10 @@ interface Financing {
 interface FinancingPageProps {
   financings: Financing[];
   onAddFinancing: (financing: Omit<Financing, 'id'>) => void;
+  onRegisterPayment?: (financingId: string, amount: number) => Promise<void> | void;
 }
 
-export function FinancingPage({ financings, onAddFinancing }: FinancingPageProps) {
+export function FinancingPage({ financings, onAddFinancing, onRegisterPayment }: FinancingPageProps) {
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -34,6 +35,9 @@ export function FinancingPage({ financings, onAddFinancing }: FinancingPageProps
     type: '',
     endDate: ''
   });
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [selectedFinancingId, setSelectedFinancingId] = useState<string | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,6 +92,25 @@ export function FinancingPage({ financings, onAddFinancing }: FinancingPageProps
       default:
         return '#6B7280';
     }
+  };
+
+  const handleOpenPaymentDialog = (financingId: string) => {
+    setSelectedFinancingId(financingId);
+    setPaymentAmount('');
+    setPaymentDialogOpen(true);
+  };
+
+  const handleRegisterPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedFinancingId || !paymentAmount) return;
+    const amount = parseFloat(paymentAmount);
+    if (Number.isNaN(amount) || amount <= 0) return;
+    if (onRegisterPayment) {
+      await onRegisterPayment(selectedFinancingId, amount);
+    }
+    setPaymentDialogOpen(false);
+    setSelectedFinancingId(null);
+    setPaymentAmount('');
   };
 
   return (
@@ -335,19 +358,57 @@ export function FinancingPage({ financings, onAddFinancing }: FinancingPageProps
                   </div>
                 </div>
 
-                <div className="pt-2 border-t">
+                <div className="pt-2 border-t space-y-3">
                   <div className="flex justify-between items-center">
                     <span style={{ color: '#6B7280' }}>Término em:</span>
                     <span className="font-medium">
                       {new Date(financing.endDate).toLocaleDateString('pt-BR')}
                     </span>
                   </div>
+                  <Button
+                    onClick={() => handleOpenPaymentDialog(financing.id)}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    Registrar parcela paga
+                  </Button>
                 </div>
               </CardContent>
             </Card>
           );
         })}
       </div>
+
+      <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle style={{ color: '#1E3A8A' }}>Registrar parcela paga</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleRegisterPayment} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="paymentAmount">Valor pago</Label>
+              <Input
+                id="paymentAmount"
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
+                placeholder="0,00"
+                required
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setPaymentDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" style={{ backgroundColor: '#1E3A8A' }} className="hover:bg-blue-800">
+                Confirmar pagamento
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {financings.length === 0 && (
         <Card>

@@ -13,6 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/financings")
@@ -68,5 +69,16 @@ public class FinancingController {
         User user = getCurrentUser();
         financingService.deleteFinancing(id, user);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/payments")
+    public ResponseEntity<Financing> registerPayment(
+            @PathVariable Long id,
+            @RequestBody Map<String, Double> payload
+    ) {
+        User user = getCurrentUser();
+        Double amount = payload.get("amount");
+        Financing updated = financingService.registerPayment(id, amount, user);
+        return ResponseEntity.ok(updated);
     }
 }

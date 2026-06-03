@@ -58,4 +58,26 @@ public class FinancingService {
                 .filter(f -> f.getUser().getId().equals(user.getId()))
                 .ifPresent(financingRepository::delete);
     }
+
+    public Financing registerPayment(Long id, Double amount, User user) {
+        if (amount == null || amount <= 0) {
+            throw new IllegalArgumentException("Valor do pagamento deve ser maior que zero");
+        }
+
+        return financingRepository.findById(id)
+                .filter(f -> f.getUser().getId().equals(user.getId()))
+                .map(financing -> {
+                    Double remaining = financing.getRemainingAmount() != null ? financing.getRemainingAmount() : 0.0;
+                    if (remaining <= 0) {
+                        throw new IllegalStateException("Financiamento já está quitado");
+                    }
+
+                    double paymentApplied = Math.min(amount, remaining);
+                    double newRemaining = Math.max(0.0, remaining - paymentApplied);
+                    financing.setRemainingAmount(newRemaining);
+
+                    return financingRepository.save(financing);
+                })
+                .orElseThrow(() -> new IllegalArgumentException("Financiamento não encontrado"));
+    }
 }

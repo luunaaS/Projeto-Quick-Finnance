@@ -300,6 +300,24 @@ export default function App() {
     }
   };
 
+  const handleRegisterFinancingPayment = async (financingId: string, amount: number) => {
+    try {
+      const updated = await api.registerFinancingPayment(financingId, amount);
+      setFinancings(prev =>
+        prev.map(f =>
+          f.id === financingId
+            ? {
+                ...f,
+                remainingAmount: updated.remainingAmount,
+              }
+            : f
+        )
+      );
+    } catch (error) {
+      console.error('Error registering financing payment:', error);
+    }
+  };
+
   // Login/Register page
   if (!isAuthenticated) {
     return (
@@ -504,6 +522,7 @@ export default function App() {
           <FinancingPage
             financings={financings}
             onAddFinancing={addFinancing}
+            onRegisterPayment={handleRegisterFinancingPayment}
           />
         );
       case 'reports':

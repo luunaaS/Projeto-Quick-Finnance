@@ -190,6 +190,13 @@ class ApiService {
     });
   }
 
+  async registerFinancingPayment(id: string, amount: number): Promise<any> {
+    return this.request(`/financings/${id}/payments`, {
+      method: 'POST',
+      body: JSON.stringify({ amount }),
+    });
+  }
+
   // Investments
   async getInvestments(): Promise<any[]> {
     return this.request('/investments');
