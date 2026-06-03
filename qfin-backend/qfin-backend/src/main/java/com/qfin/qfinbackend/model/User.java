@@ -1,9 +1,12 @@
 package com.qfin.qfinbackend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+
+import java.time.LocalDate;
 
 @Entity
 @Data
@@ -22,6 +25,18 @@ public class User {
     @Column(unique = true)
     private String email;
 
+    @JsonIgnore
     @NotBlank(message = "Password cannot be empty")
     private String password;
+
+    private String phone;
+
+    @Column(length = 1000)
+    private String bio;
+
+    private LocalDate birthDate;
+
+    @Lob
+    @Column(columnDefinition = "TEXT")
+    private String profileImageBase64;
 }
