@@ -22,26 +22,25 @@ public class DashboardService {
 
     public Map<String, Object> getDashboardData(User user) {
         List<Transaction> transactions = transactionRepository.findAll().stream()
-                .filter(t -> t.getUser().getId().equals(user.getId()))
+                .filter(t -> t.getUser() != null && t.getUser().getId() != null && t.getUser().getId().equals(user.getId()))
                 .collect(Collectors.toList());
 
         List<Financing> financings = financingRepository.findAll().stream()
-                .filter(f -> f.getUser().getId().equals(user.getId()))
+                .filter(f -> f.getUser() != null && f.getUser().getId() != null && f.getUser().getId().equals(user.getId()))
                 .collect(Collectors.toList());
 
         double totalIncome = transactions.stream()
                 .filter(t -> t.getType() == Transaction.TransactionType.INCOME)
-                .mapToDouble(Transaction::getAmount)
+                .mapToDouble(t -> t.getAmount() != null ? t.getAmount() : 0.0)
                 .sum();
 
         double totalExpenses = transactions.stream()
                 .filter(t -> t.getType() == Transaction.TransactionType.EXPENSE)
-                .mapToDouble(Transaction::getAmount)
+                .mapToDouble(t -> t.getAmount() != null ? t.getAmount() : 0.0)
                 .sum();
 
         double totalBalance = totalIncome - totalExpenses;
 
-        // Recent transactions (last 5)
         List<Transaction> recentTransactions = transactions.stream()
                 .sorted(Comparator.comparing(Transaction::getDate).reversed())
                 .limit(5)

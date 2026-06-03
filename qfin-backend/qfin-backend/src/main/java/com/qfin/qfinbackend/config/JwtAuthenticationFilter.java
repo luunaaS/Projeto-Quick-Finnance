@@ -33,9 +33,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        // Pular autenticação apenas para login e register
+        // Rotas públicas
         String path = request.getRequestURI();
-        if (path.equals("/api/auth/login") || path.equals("/api/auth/register") || path.equals("/api/auth/profile")) {
+        if (path.equals("/api/auth/login")
+                || path.equals("/api/auth/register")
+                || path.equals("/api/auth/forgot-password")
+                || path.equals("/api/auth/reset-password")) {
             filterChain.doFilter(request, response);
             return;
         }
