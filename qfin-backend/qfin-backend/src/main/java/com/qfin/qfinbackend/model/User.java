@@ -17,17 +17,20 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "Name cannot be empty")
+    @NotBlank(message = "Nome não pode ser vazio")
     private String name;
 
-    @NotBlank(message = "Email cannot be empty")
-    @Email(message = "Email should be valid")
+    @NotBlank(message = "Email não pode ser vazio")
+    @Email(message = "Email deve ser válido")
     @Column(unique = true)
     private String email;
 
     @JsonIgnore
-    @NotBlank(message = "Password cannot be empty")
+    @NotBlank(message = "Senha não pode ser vazia")
     private String password;
+
+    @Column(unique = true, length = 14)
+    private String cpf;
 
     private String phone;
 
@@ -39,4 +42,8 @@ public class User {
     @Lob
     @Column(columnDefinition = "TEXT")
     private String profileImageBase64;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserRole role = UserRole.USER;
 }

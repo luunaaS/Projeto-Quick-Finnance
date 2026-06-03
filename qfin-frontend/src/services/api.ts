@@ -64,13 +64,46 @@ class ApiService {
     return data;
   }
 
-  async register(name: string, email: string, password: string): Promise<{ token: string; user?: { id: number; name: string; email: string } }> {
-    const data = await this.request<{ token: string; user?: { id: number; name: string; email: string } }>('/auth/register', {
+  async register(name: string, email: string, password: string, cpf?: string): Promise<{ token: string; user?: { id: number; name: string; email: string; role?: string } }> {
+    const data = await this.request<{ token: string; user?: { id: number; name: string; email: string; role?: string } }>('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, email, password, cpf }),
     });
     this.setToken(data.token);
     return data;
+  }
+
+  async forgotPassword(email: string): Promise<{ message: string; resetToken?: string }> {
+    return this.request('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+    return this.request('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, newPassword }),
+    });
+  }
+
+  async getMyLogs(): Promise<any[]> {
+    return this.request('/auth/my-logs');
+  }
+
+  async getAdminUsers(): Promise<any[]> {
+    return this.request('/admin/users');
+  }
+
+  async changeUserRole(userId: number, role: string): Promise<{ message: string }> {
+    return this.request(`/admin/users/${userId}/role`, {
+      method: 'PUT',
+      body: JSON.stringify({ role }),
+    });
+  }
+
+  async getAdminLogs(page = 0, size = 50): Promise<any[]> {
+    return this.request(`/admin/logs?page=${page}&size=${size}`);
   }
 
   // Dashboard

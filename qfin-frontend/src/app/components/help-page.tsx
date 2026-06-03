@@ -79,6 +79,10 @@ export function HelpPage() {
                   <li>Gerenciamento de financiamentos</li>
                   <li>Relatórios e gráficos financeiros com filtros e exportações</li>
                   <li>Configurações de notificações centralizadas no Perfil</li>
+                  <li>Recuperação de senha por token</li>
+                  <li>Controle de acesso por perfil (RBAC): Admin, Operador e Usuário</li>
+                  <li>Histórico de ações (log de auditoria)</li>
+                  <li>Validação de CPF e criptografia de senhas (BCrypt)</li>
                 </ul>
               </div>
             </div>
@@ -486,6 +490,154 @@ export function HelpPage() {
         </div>
       </div>
 
+      {/* New features section */}
+      <div className="mb-6">
+        <h2 className="text-[#1E3A8A] mb-4">Segurança e Conta</h2>
+        <div className="space-y-3">
+          <AccordionItem
+            title="Como recuperar minha senha?"
+            icon={<HelpCircle className="w-5 h-5" />}
+            isOpen={openIndex === 11}
+            onToggle={() => toggleAccordion(11)}
+          >
+            <div className="space-y-3 text-[#6B7280]">
+              <p>Se você esqueceu sua senha, siga estes passos:</p>
+              <ol className="list-decimal list-inside space-y-2 text-sm ml-2">
+                <li>Na tela de login, clique em <strong>"Esqueci minha senha"</strong></li>
+                <li>Informe o email cadastrado na sua conta</li>
+                <li>Clique em <strong>"Enviar link de recuperação"</strong></li>
+                <li>Um token de recuperação será gerado (em produção, enviado por email)</li>
+                <li>Use o token recebido na tela de <strong>"Redefinir senha"</strong></li>
+                <li>Crie uma nova senha com pelo menos 6 caracteres</li>
+              </ol>
+              <div className="bg-[#FEF3C7] p-3 rounded-lg border border-yellow-300 mt-3">
+                <p className="text-sm text-yellow-800">
+                  <strong>Atenção:</strong> O token de recuperação expira em 1 hora. Após o uso, um novo token deve ser solicitado.
+                </p>
+              </div>
+            </div>
+          </AccordionItem>
+
+          <AccordionItem
+            title="Como funciona a criptografia de senhas?"
+            icon={<HelpCircle className="w-5 h-5" />}
+            isOpen={openIndex === 12}
+            onToggle={() => toggleAccordion(12)}
+          >
+            <div className="space-y-3 text-[#6B7280]">
+              <p>O QFin utiliza criptografia de ponta para proteger suas senhas:</p>
+              <div className="bg-white p-4 rounded-lg border border-gray-200 space-y-2">
+                <div className="flex items-start gap-2">
+                  <span className="text-green-600 font-bold">🔐</span>
+                  <div>
+                    <p className="font-semibold text-gray-800">BCrypt Hash</p>
+                    <p className="text-sm">Sua senha nunca é armazenada em texto puro. É convertida em um hash BCrypt (baseado em SHA-256) antes de ser salva no banco de dados.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-green-600 font-bold">🔑</span>
+                  <div>
+                    <p className="font-semibold text-gray-800">JWT Tokens</p>
+                    <p className="text-sm">A autenticação usa tokens JWT com expiração de 24 horas. Sua sessão é segura e sem estado no servidor.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-green-600 font-bold">✅</span>
+                  <div>
+                    <p className="font-semibold text-gray-800">Requisitos de senha</p>
+                    <p className="text-sm">A senha deve ter no mínimo 6 caracteres. Recomendamos usar letras maiúsculas, minúsculas, números e símbolos.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </AccordionItem>
+
+          <AccordionItem
+            title="Controle de perfis (RBAC) — o que é?"
+            icon={<HelpCircle className="w-5 h-5" />}
+            isOpen={openIndex === 13}
+            onToggle={() => toggleAccordion(13)}
+          >
+            <div className="space-y-3 text-[#6B7280]">
+              <p>O sistema usa controle de acesso baseado em papéis (RBAC). Cada usuário tem um nível de permissão:</p>
+              <div className="space-y-2">
+                <div className="bg-white p-3 rounded-lg border border-gray-200 flex items-start gap-3">
+                  <span className="text-2xl">👤</span>
+                  <div>
+                    <p className="font-semibold text-gray-800">Usuário (USER)</p>
+                    <p className="text-sm">Acesso padrão. Gerencia suas próprias transações, metas, investimentos e financiamentos. Não acessa dados de outros usuários.</p>
+                  </div>
+                </div>
+                <div className="bg-white p-3 rounded-lg border border-gray-200 flex items-start gap-3">
+                  <span className="text-2xl">🛠️</span>
+                  <div>
+                    <p className="font-semibold text-gray-800">Operador (OPERATOR)</p>
+                    <p className="text-sm">Além das permissões de usuário, pode visualizar a lista de todos os usuários e consultar logs de ações do sistema.</p>
+                  </div>
+                </div>
+                <div className="bg-white p-3 rounded-lg border border-gray-200 flex items-start gap-3">
+                  <span className="text-2xl">👑</span>
+                  <div>
+                    <p className="font-semibold text-gray-800">Administrador (ADMIN)</p>
+                    <p className="text-sm">Acesso completo. Pode gerenciar todos os usuários, alterar papéis e acessar o histórico completo de ações do sistema.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </AccordionItem>
+
+          <AccordionItem
+            title="O que é o histórico de ações (log)?"
+            icon={<HelpCircle className="w-5 h-5" />}
+            isOpen={openIndex === 14}
+            onToggle={() => toggleAccordion(14)}
+          >
+            <div className="space-y-3 text-[#6B7280]">
+              <p>O QFin registra automaticamente todas as ações importantes realizadas na plataforma:</p>
+              <div className="bg-white p-4 rounded-lg border border-gray-200">
+                <p className="font-semibold text-gray-800 mb-2">Ações registradas:</p>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  <li>Login na plataforma</li>
+                  <li>Cadastro de novo usuário</li>
+                  <li>Atualização de perfil</li>
+                  <li>Alteração de senha</li>
+                  <li>Recuperação de senha (geração e uso de token)</li>
+                  <li>Mudança de papel/permissão de usuário (admin)</li>
+                </ul>
+              </div>
+              <div className="bg-[#EFF6FF] p-3 rounded-lg border border-[#1E3A8A]/20">
+                <p className="text-sm">
+                  <strong>Como acessar:</strong> Você pode consultar seu próprio histórico de ações via API em <code>/api/auth/my-logs</code>. Administradores e operadores acessam o log completo em <code>/api/admin/logs</code>.
+                </p>
+              </div>
+            </div>
+          </AccordionItem>
+
+          <AccordionItem
+            title="Como funciona a validação de CPF?"
+            icon={<HelpCircle className="w-5 h-5" />}
+            isOpen={openIndex === 15}
+            onToggle={() => toggleAccordion(15)}
+          >
+            <div className="space-y-3 text-[#6B7280]">
+              <p>O CPF é um campo opcional durante o cadastro. Quando informado, o sistema realiza as seguintes validações:</p>
+              <ul className="list-disc list-inside space-y-1 text-sm ml-2">
+                <li>Verifica se o CPF possui 11 dígitos numéricos</li>
+                <li>Aplica os algoritmos de validação dos dígitos verificadores</li>
+                <li>Rejeita CPFs com todos os dígitos iguais (ex: 111.111.111-11)</li>
+                <li>Verifica unicidade: um CPF não pode estar cadastrado em duas contas</li>
+                <li>Formata automaticamente para o padrão XXX.XXX.XXX-XX</li>
+              </ul>
+              <div className="bg-[#EFF6FF] p-3 rounded-lg border border-[#1E3A8A]/20 mt-3">
+                <p className="text-sm">
+                  <strong>Formato aceito:</strong> Você pode digitar apenas os 11 números (sem pontos e traço) ou no formato formatado. O sistema normaliza automaticamente.
+                </p>
+              </div>
+            </div>
+          </AccordionItem>
+        </div>
+      </div>
+
       {/* Tips */}
       <div className="bg-gradient-to-r from-[#1E3A8A] to-[#1E40AF] text-white rounded-lg p-6">
         <h2 className="mb-4">🎯 Dicas para aproveitar melhor o QFin</h2>
@@ -496,6 +648,8 @@ export function HelpPage() {
           <li>✅ Aplique filtros de granularidade e categoria nos relatórios antes de exportar CSV/PDF</li>
           <li>✅ Ajuste notificações na seção de Perfil para manter alertas relevantes</li>
           <li>✅ Use o ícone de cifrão no topo para voltar rapidamente ao Dashboard</li>
+          <li>✅ Use uma senha forte com no mínimo 6 caracteres para proteger sua conta</li>
+          <li>✅ Nunca compartilhe seu token de recuperação de senha com ninguém</li>
         </ul>
       </div>
 
