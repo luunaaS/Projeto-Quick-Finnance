@@ -40,7 +40,6 @@ public class User {
 
     private LocalDate birthDate;
 
-    @Lob
     @Column(columnDefinition = "TEXT")
     private String profileImageBase64;
 
